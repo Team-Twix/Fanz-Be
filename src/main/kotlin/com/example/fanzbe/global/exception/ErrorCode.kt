@@ -14,5 +14,7 @@ enum class ErrorCode(
     CHAT_ROOM_NOT_FOUND(HttpStatus.NOT_FOUND, "CHAT_001", "Chat room not found."),
     ALREADY_JOINED(HttpStatus.CONFLICT, "CHAT_002", "Already joined chat room."),
     NOT_ROOM_MEMBER(HttpStatus.FORBIDDEN, "CHAT_003", "User is not a chat room member."),
+    HANDLE_DUPLICATED(HttpStatus.CONFLICT, "PROFILE_001", "이미 사용 중인 핸들입니다."),
+    CANNOT_FOLLOW_SELF(HttpStatus.BAD_REQUEST, "FOLLOW_001", "자기 자신은 팔로우할 수 없습니다."),
     INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "COMMON_500", "Internal server error."),
 }
