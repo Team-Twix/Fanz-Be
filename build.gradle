@@ -1,0 +1,71 @@
+plugins {
+    id 'org.jetbrains.kotlin.jvm' version '2.3.21'
+    id 'org.jetbrains.kotlin.plugin.spring' version '2.3.21'
+    id 'org.jetbrains.kotlin.plugin.jpa' version '2.3.21'
+    id 'org.springframework.boot' version '4.1.0'
+    id 'io.spring.dependency-management' version '1.1.7'
+    id 'org.graalvm.buildtools.native' version '1.1.1'
+}
+
+group = 'com.example'
+version = '0.0.1-SNAPSHOT'
+description = 'Fanz-Be'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // --- Web / Security (인증: 회원가입, 로그인) ---
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+    // --- 영속성 / DB (프로필, 유저 선호도, 덕메 구인 게시판) ---
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    runtimeOnly 'com.mysql:mysql-connector-j'
+
+    // --- 스키마 마이그레이션 (Flyway) ---
+    // 전략 B: 초기엔 JPA ddl-auto=update 로 개발, 스키마 확정 후 flyway.enabled=true 로 전환.
+    // 지금은 classpath 에만 올려두고 application.yaml 에서 spring.flyway.enabled=false 로 비활성화.
+    implementation 'org.flywaydb:flyway-core'
+    implementation 'org.flywaydb:flyway-mysql'
+
+    // --- 실시간 채팅 (단체 채팅, 1:1 채팅) ---
+    implementation 'org.springframework.boot:spring-boot-starter-websocket'
+
+    // --- JWT (토큰 기반 인증) ---
+    implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
+    // Boot 4 는 Jackson 3(tools.jackson) 를 쓰므로 Jackson 2 유입을 피하려 gson 직렬화 사용
+    runtimeOnly 'io.jsonwebtoken:jjwt-gson:0.12.6'
+
+    // --- Kotlin / Jackson ---
+    implementation 'org.jetbrains.kotlin:kotlin-reflect'
+    implementation 'tools.jackson.module:jackson-module-kotlin'
+
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+
+    // --- Test ---
+    testImplementation 'org.springframework.boot:spring-boot-starter-security-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+    testImplementation 'org.jetbrains.kotlin:kotlin-test-junit5'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testRuntimeOnly 'com.h2database:h2'
+}
+
+kotlin {
+    compilerOptions {
+        freeCompilerArgs.addAll '-Xjsr305=strict', '-Xannotation-default-target=param-property'
+    }
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
