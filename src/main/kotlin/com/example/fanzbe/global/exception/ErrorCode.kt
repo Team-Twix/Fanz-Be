@@ -11,5 +11,8 @@ enum class ErrorCode(
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "AUTH_001", "Unauthorized."),
     INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "AUTH_002", "Invalid token."),
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, "USER_001", "User not found."),
+    CHAT_ROOM_NOT_FOUND(HttpStatus.NOT_FOUND, "CHAT_001", "Chat room not found."),
+    ALREADY_JOINED(HttpStatus.CONFLICT, "CHAT_002", "Already joined chat room."),
+    NOT_ROOM_MEMBER(HttpStatus.FORBIDDEN, "CHAT_003", "User is not a chat room member."),
     INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "COMMON_500", "Internal server error."),
 }
