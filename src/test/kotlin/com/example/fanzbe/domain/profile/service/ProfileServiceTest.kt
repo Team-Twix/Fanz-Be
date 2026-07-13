@@ -66,6 +66,6 @@ class ProfileServiceTest(
 
     private fun createUser(email: String, nickname: String): User =
         userRepository.save(
-            User(email = email, password = "encoded", nickname = nickname),
+            User(username =email, password = "encoded", nickname = nickname),
         )
 }

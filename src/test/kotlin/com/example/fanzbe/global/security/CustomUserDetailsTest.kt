@@ -12,7 +12,7 @@ class CustomUserDetailsTest {
     fun `custom user details exposes id credentials and role authority`() {
         val user = User(
             id = 7L,
-            email = "admin@example.com",
+            username ="admin@example.com",
             password = "encoded-password",
             nickname = "admin",
             role = Role.ADMIN,

@@ -35,7 +35,7 @@ class StompAuthChannelInterceptorTest(
     @Test
     fun `CONNECT with valid bearer token sets authenticated user`() {
         val user = userRepository.save(
-            User(email = "stomp-user@fanz.com", password = "encoded", nickname = "stomp"),
+            User(username ="stomp-user@fanz.com", password = "encoded", nickname = "stomp"),
         )
         val token = jwtProvider.createAccessToken(user.id!!)
         val message = connectMessage("Bearer $token")

@@ -8,7 +8,7 @@ class UserTest {
     @Test
     fun `new user has default manner score and user role`() {
         val user = User(
-            email = "fan@example.com",
+            username ="fan@example.com",
             password = "encoded-password",
             nickname = "fan",
         )
