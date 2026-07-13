@@ -32,6 +32,7 @@ class SecurityConfig(
             .authorizeHttpRequests { authorize ->
                 authorize
                     .requestMatchers("/api/auth/**").permitAll()
+                    .requestMatchers("/ws", "/ws/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/chat-rooms", "/api/chat-rooms/popular").permitAll()
                     .anyRequest().authenticated()
             }
