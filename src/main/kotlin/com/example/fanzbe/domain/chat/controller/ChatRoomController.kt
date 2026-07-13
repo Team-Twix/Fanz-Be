@@ -39,10 +39,10 @@ class ChatRoomController(
 
     @GetMapping
     fun getRooms(
-        @RequestParam(name = "category", required = false) category: String?,
+        @RequestParam(name = "hashtag", required = false) hashtag: String?,
         @RequestParam(name = "keyword", required = false) keyword: String?,
     ): ApiResponse<List<ChatRoomResponse>> =
-        ApiResponse.success(chatRoomService.getRooms(category, keyword))
+        ApiResponse.success(chatRoomService.getRooms(hashtag, keyword))
 
     @GetMapping("/popular")
     fun getPopularRooms(

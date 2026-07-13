@@ -32,7 +32,10 @@ class ChatRoomService(
                 name = request.name.trim(),
                 description = request.description.normalizeNullable(),
                 imageUrl = request.imageUrl.normalizeNullable(),
-                category = request.category.trim(),
+                hashtags = request.hashtags.normalizeTags(),
+                ageConditions = request.ageConditions.toMutableSet(),
+                genderCondition = request.gender,
+                extraConditions = request.extraConditions.normalizeTags(),
                 host = host,
             ),
         )
@@ -48,9 +51,9 @@ class ChatRoomService(
     }
 
     @Transactional(readOnly = true)
-    fun getRooms(category: String?, keyword: String?): List<ChatRoomResponse> =
+    fun getRooms(hashtag: String?, keyword: String?): List<ChatRoomResponse> =
         chatRoomRepository.search(
-            category = category.normalizeNullable(),
+            hashtag = hashtag.normalizeNullable(),
             keyword = keyword.normalizeNullable(),
         ).map { chatRoom ->
             chatRoom.toResponse()
@@ -101,7 +104,10 @@ class ChatRoomService(
             name = name,
             description = description,
             imageUrl = imageUrl,
-            category = category,
+            hashtags = hashtags.toList(),
+            ageConditions = ageConditions.toList(),
+            gender = genderCondition,
+            extraConditions = extraConditions.toList(),
             hostId = requireNotNull(host.id) { "Chat room host id must not be null." },
             memberCount = chatRoomMemberRepository.countByChatRoom(this),
         )
@@ -125,7 +131,7 @@ class ChatRoomService(
             id = roomId,
             name = name,
             imageUrl = imageUrl,
-            category = category,
+            hashtags = hashtags.toList(),
             memberCount = memberCount,
             monthlyMessageCount = monthlyMessageCount,
             activityRate = ChatRoomStatistics.calculateActivityRate(
@@ -145,4 +151,7 @@ class ChatRoomService(
 
     private fun String?.normalizeNullable(): String? =
         this?.trim()?.takeIf { it.isNotEmpty() }
+
+    private fun List<String>.normalizeTags(): MutableSet<String> =
+        mapNotNull { it.trim().takeIf(String::isNotEmpty) }.toMutableSet()
 }

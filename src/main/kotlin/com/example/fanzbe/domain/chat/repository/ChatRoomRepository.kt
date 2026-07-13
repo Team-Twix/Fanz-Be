@@ -9,15 +9,15 @@ interface ChatRoomRepository : JpaRepository<ChatRoom, Long> {
 
     @Query(
         """
-        select cr
+        select distinct cr
         from ChatRoom cr
-        where (:category is null or cr.category = :category)
+        where (:hashtag is null or :hashtag member of cr.hashtags)
           and (:keyword is null or lower(cr.name) like lower(concat('%', :keyword, '%')))
         order by cr.createdAt desc, cr.id desc
         """,
     )
     fun search(
-        @Param("category") category: String?,
+        @Param("hashtag") hashtag: String?,
         @Param("keyword") keyword: String?,
     ): List<ChatRoom>
 }

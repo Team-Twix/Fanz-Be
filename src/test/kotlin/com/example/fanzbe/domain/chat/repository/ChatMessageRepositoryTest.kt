@@ -76,7 +76,7 @@ class ChatMessageRepositoryTest(
 
     private fun createRoom(host: User): ChatRoom =
         chatRoomRepository.save(
-            ChatRoom(name = "room", description = null, imageUrl = null, category = "anime", host = host),
+            ChatRoom(name = "room", description = null, imageUrl = null, hashtags = mutableSetOf("anime"), host = host),
         )
 
     private fun joinUser(room: ChatRoom, email: String): User {
