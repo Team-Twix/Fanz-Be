@@ -27,3 +27,8 @@ spring:
 logging:
   level:
     org.hibernate.SQL: debug
+
+jwt:
+  secret: ${JWT_SECRET:fanz-be-dev-secret-key-with-at-least-256-bits-for-hs256-local-only}
+  access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:1800000}
+  refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:1209600000}
