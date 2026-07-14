@@ -19,5 +19,8 @@ enum class ErrorCode(
     NOT_ROOM_MEMBER(HttpStatus.FORBIDDEN, "CHAT_003", "User is not a chat room member."),
     HANDLE_DUPLICATED(HttpStatus.CONFLICT, "PROFILE_001", "이미 사용 중인 핸들입니다."),
     CANNOT_FOLLOW_SELF(HttpStatus.BAD_REQUEST, "FOLLOW_001", "자기 자신은 팔로우할 수 없습니다."),
+    DM_ROOM_NOT_FOUND(HttpStatus.NOT_FOUND, "DM_001", "DM 대화방을 찾을 수 없습니다."),
+    NOT_DM_PARTICIPANT(HttpStatus.FORBIDDEN, "DM_002", "DM 대화 참여자가 아닙니다."),
+    CANNOT_DM_SELF(HttpStatus.BAD_REQUEST, "DM_003", "자기 자신과는 DM 할 수 없습니다."),
     INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "COMMON_500", "Internal server error."),
 }
