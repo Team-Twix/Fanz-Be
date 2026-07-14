@@ -26,6 +26,7 @@ data class SignupRequest(
     @field:Size(max = 50)
     val nickname: String,
 
+    // 나이대 (그룹으로 수신)
     @field:NotNull
     val ageGroup: AgeGroup,
 

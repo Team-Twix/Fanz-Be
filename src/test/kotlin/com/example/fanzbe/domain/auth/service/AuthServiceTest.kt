@@ -34,12 +34,13 @@ class AuthServiceTest(
         username: String = "fanuser",
         password: String = "password123",
         passwordConfirm: String = "password123",
+        ageGroup: AgeGroup = AgeGroup.TWENTIES,
     ) = SignupRequest(
         username = username,
         password = password,
         passwordConfirm = passwordConfirm,
         nickname = "fan",
-        ageGroup = AgeGroup.TWENTIES,
+        ageGroup = ageGroup,
         interests = listOf("에반게리온", " "),
     )
 
