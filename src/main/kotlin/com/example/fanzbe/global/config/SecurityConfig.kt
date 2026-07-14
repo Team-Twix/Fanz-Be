@@ -41,6 +41,7 @@ class SecurityConfig(
                     .requestMatchers("/api/auth/**").permitAll()
                     .requestMatchers("/ws", "/ws/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
+                    .requestMatchers(HttpMethod.HEAD, "/uploads/**").permitAll()
                     .requestMatchers(HttpMethod.POST, "/api/uploads/images").permitAll()
                     .requestMatchers(HttpMethod.GET, "/api/chat-rooms", "/api/chat-rooms/popular").permitAll()
                     .anyRequest().authenticated()
@@ -57,7 +58,7 @@ class SecurityConfig(
                 .split(",")
                 .map(String::trim)
                 .filter(String::isNotEmpty)
-            allowedMethods = listOf("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
+            allowedMethods = listOf("GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
             allowedHeaders = listOf("Authorization", "Content-Type", "Accept", "Origin")
             exposedHeaders = listOf("Location")
             allowCredentials = true
