@@ -34,13 +34,13 @@ class AuthServiceTest(
         username: String = "fanuser",
         password: String = "password123",
         passwordConfirm: String = "password123",
-        age: String = "23",
+        ageGroup: AgeGroup = AgeGroup.TWENTIES,
     ) = SignupRequest(
         username = username,
         password = password,
         passwordConfirm = passwordConfirm,
         nickname = "fan",
-        age = age,
+        ageGroup = ageGroup,
         interests = listOf("에반게리온", " "),
     )
 
@@ -52,20 +52,6 @@ class AuthServiceTest(
         assertTrue(passwordEncoder.matches("password123", user.password))
         assertEquals(AgeGroup.TWENTIES, user.ageGroup)
         assertEquals(setOf("에반게리온"), user.interests) // 공백 항목은 제거
-    }
-
-    @Test
-    fun `회원가입 - 나이 문자열이 나이대 그룹으로 변환된다`() {
-        val userId = authService.signup(signupRequest(username = "olduser", age = "51")).userId
-        assertEquals(AgeGroup.FIFTIES, userRepository.findById(userId).orElseThrow().ageGroup)
-    }
-
-    @Test
-    fun `회원가입 - 나이가 숫자가 아니면 INVALID_INPUT`() {
-        val ex = assertFailsWith<BusinessException> {
-            authService.signup(signupRequest(username = "baduser", age = "abc"))
-        }
-        assertEquals(ErrorCode.INVALID_INPUT, ex.errorCode)
     }
 
     @Test
