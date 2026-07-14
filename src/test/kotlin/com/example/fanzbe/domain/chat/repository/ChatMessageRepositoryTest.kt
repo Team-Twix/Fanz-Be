@@ -32,10 +32,10 @@ class ChatMessageRepositoryTest(
 
     @Test
     fun `이번 달 30개 이상 보낸 서로 다른 멤버만 활성으로 집계한다`() {
-        val room = createRoom(host = createUser("host@fanz.com"))
-        val active = joinUser(room, "active@fanz.com")     // 30개 -> 활성
-        val borderline = joinUser(room, "border@fanz.com") // 29개 -> 비활성
-        val lastMonth = joinUser(room, "last@fanz.com")    // 30개지만 지난 달 -> 제외
+        val room = createRoom(host = createUser("host"))
+        val active = joinUser(room, "active")     // 30개 -> 활성
+        val borderline = joinUser(room, "border") // 29개 -> 비활성
+        val lastMonth = joinUser(room, "last")    // 30개지만 지난 달 -> 제외
 
         saveMessages(room, active, count = 30)
         saveMessages(room, borderline, count = 29)
@@ -53,9 +53,9 @@ class ChatMessageRepositoryTest(
 
     @Test
     fun `이번 달 메시지 수는 지난 달 메시지를 제외한다`() {
-        val room = createRoom(host = createUser("host2@fanz.com"))
-        val thisMonth = joinUser(room, "this@fanz.com")
-        val prevMonth = joinUser(room, "prev@fanz.com")
+        val room = createRoom(host = createUser("host2"))
+        val thisMonth = joinUser(room, "this-month")
+        val prevMonth = joinUser(room, "previous-month")
 
         saveMessages(room, thisMonth, count = 5)
         saveMessages(room, prevMonth, count = 7)
@@ -69,9 +69,9 @@ class ChatMessageRepositoryTest(
         assertEquals(5L, monthlyCount)
     }
 
-    private fun createUser(email: String): User =
+    private fun createUser(nickname: String): User =
         userRepository.save(
-            User(email = email, password = "encoded", nickname = email.substringBefore("@")),
+            User(password = "encoded", nickname = nickname),
         )
 
     private fun createRoom(host: User): ChatRoom =
@@ -79,8 +79,8 @@ class ChatMessageRepositoryTest(
             ChatRoom(name = "room", description = null, imageUrl = null, hashtags = mutableSetOf("anime"), host = host),
         )
 
-    private fun joinUser(room: ChatRoom, email: String): User {
-        val user = createUser(email)
+    private fun joinUser(room: ChatRoom, nickname: String): User {
+        val user = createUser(nickname)
         chatRoomMemberRepository.save(ChatRoomMember(chatRoom = room, user = user))
         return user
     }

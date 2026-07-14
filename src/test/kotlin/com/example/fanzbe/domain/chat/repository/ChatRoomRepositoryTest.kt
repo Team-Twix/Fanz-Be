@@ -27,7 +27,7 @@ class ChatRoomRepositoryTest(
 
     @Test
     fun `해시태그로 검색하면 해당 태그를 가진 방만 반환한다`() {
-        val host = createUser("host@fanz.com")
+        val host = createUser("host")
         val anime = chatRoomRepository.save(
             ChatRoom(name = "anime room", hashtags = mutableSetOf("anime", "kpop"), host = host),
         )
@@ -42,7 +42,7 @@ class ChatRoomRepositoryTest(
 
     @Test
     fun `가입조건(연령·성별·추가조건)이 저장되고 다시 로드된다`() {
-        val host = createUser("host2@fanz.com")
+        val host = createUser("host2")
         val saved = chatRoomRepository.save(
             ChatRoom(
                 name = "conditioned",
@@ -64,8 +64,8 @@ class ChatRoomRepositoryTest(
         assertEquals(setOf("anime"), reloaded.hashtags)
     }
 
-    private fun createUser(email: String): User =
+    private fun createUser(nickname: String): User =
         userRepository.save(
-            User(email = email, password = "encoded", nickname = email.substringBefore("@")),
+            User(password = "encoded", nickname = nickname),
         )
 }

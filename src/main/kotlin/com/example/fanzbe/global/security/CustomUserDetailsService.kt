@@ -12,8 +12,8 @@ class CustomUserDetailsService(
 ) : UserDetailsService {
 
     override fun loadUserByUsername(username: String): UserDetails =
-        userRepository.findByEmail(username)?.let(::CustomUserDetails)
-            ?: throw UsernameNotFoundException("User not found by email: $username")
+        userRepository.findByNickname(username)?.let(::CustomUserDetails)
+            ?: throw UsernameNotFoundException("User not found by nickname: $username")
 
     fun loadUserById(userId: Long): CustomUserDetails =
         userRepository.findById(userId)

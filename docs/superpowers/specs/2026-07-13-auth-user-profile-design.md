@@ -16,7 +16,7 @@
 - 프로필 설정 (`/api/profile/me`)
 - 유저 선호도 = **매너온도형 평판 점수** 조회/증감
 
-**비범위(YAGNI):** 이메일 인증, 소셜 로그인, 비밀번호 재설정, 이미지 업로드(파일 스토리지)는 이번 범위에서 제외. 프로필 이미지는 URL 문자열만 저장.
+**비범위(YAGNI):** 별도 계정 인증, 소셜 로그인, 비밀번호 재설정, 이미지 업로드(파일 스토리지)는 이번 범위에서 제외. 프로필 이미지는 URL 문자열만 저장.
 
 ---
 
@@ -46,9 +46,9 @@ com.example.fanzbe
 | 필드 | 타입 | 비고 |
 |---|---|---|
 | id | Long PK | auto |
-| email | String, unique, not null | 로그인 ID |
 | password | String, not null | BCrypt 해시 |
-| nickname | String, not null | |
+| nickname | String, unique, not null | 로그인 ID 및 유저 검색 기준 |
+| hashtags | ElementCollection\<String\> | 유저 관심 해시태그 |
 | mannerScore | Double, not null | **선호도/매너온도**. 기본값 36.5 |
 | role | Enum(USER, ADMIN) | 기본 USER |
 | createdAt / updatedAt | (BaseTimeEntity) | |
@@ -100,8 +100,8 @@ com.example.fanzbe
 ### 인증 (feature/signup, feature/login)
 | 기능 | 메서드 | 경로 | 요청 | 응답 |
 |---|---|---|---|---|
-| 회원가입 | POST | `/api/auth/signup` | email, password, nickname | 생성된 userId |
-| 로그인 | POST | `/api/auth/login` | email, password | accessToken, refreshToken |
+| 회원가입 | POST | `/api/auth/signup` | nickname, password, hashtags | 생성된 userId |
+| 로그인 | POST | `/api/auth/login` | nickname, password | accessToken, refreshToken |
 | 토큰 재발급 | POST | `/api/auth/reissue` | refreshToken | accessToken, refreshToken |
 | 로그아웃 🔒 | POST | `/api/auth/logout` | (인증 유저) | 204 |
 
@@ -124,9 +124,9 @@ com.example.fanzbe
 
 ## 6. 검증 / 예외 처리
 
-- 요청 DTO는 `jakarta.validation`(@Email, @NotBlank, @Size 등)으로 검증.
+- 요청 DTO는 `jakarta.validation`(@NotBlank, @Size 등)으로 검증.
 - `GlobalExceptionHandler`(@RestControllerAdvice)에서 예외 → `ApiResponse` 에러 포맷으로 변환.
-- 주요 에러: 이메일 중복(회원가입), 인증 실패(로그인), 토큰 무효/만료(재발급), 리소스 없음(유저/프로필), 자기 자신 평가(선호도).
+- 주요 에러: 닉네임 중복(회원가입), 인증 실패(로그인), 토큰 무효/만료(재발급), 리소스 없음(유저/프로필), 자기 자신 평가(선호도).
 
 ---
 

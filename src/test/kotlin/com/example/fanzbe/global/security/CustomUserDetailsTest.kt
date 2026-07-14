@@ -12,7 +12,6 @@ class CustomUserDetailsTest {
     fun `custom user details exposes id credentials and role authority`() {
         val user = User(
             id = 7L,
-            email = "admin@example.com",
             password = "encoded-password",
             nickname = "admin",
             role = Role.ADMIN,
@@ -21,7 +20,7 @@ class CustomUserDetailsTest {
         val userDetails = CustomUserDetails(user)
 
         assertEquals(7L, userDetails.id)
-        assertEquals("admin@example.com", userDetails.username)
+        assertEquals("admin", userDetails.username)
         assertEquals("encoded-password", userDetails.password)
         assertTrue(userDetails.authorities.any { it.authority == "ROLE_ADMIN" })
     }

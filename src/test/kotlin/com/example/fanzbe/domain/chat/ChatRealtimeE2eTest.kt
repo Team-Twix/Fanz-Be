@@ -48,7 +48,7 @@ class ChatRealtimeE2eTest(
     fun `JWT 로 연결해 보낸 메시지가 구독자에게 실시간 전달되고 저장된다`() {
         // 서버가 별도 스레드에서 도므로 데이터는 커밋되어 있어야 한다(@Transactional 미사용).
         val user = userRepository.save(
-            User(email = "realtime@fanz.com", password = "encoded", nickname = "rt"),
+            User(password = "encoded", nickname = "realtime"),
         )
         val room = chatRoomRepository.save(
             ChatRoom(name = "room", hashtags = mutableSetOf("anime"), host = user),

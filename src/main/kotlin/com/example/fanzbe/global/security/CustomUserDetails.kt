@@ -19,5 +19,5 @@ class CustomUserDetails(
         user.password
 
     override fun getUsername(): String =
-        user.email
+        user.nickname
 }
