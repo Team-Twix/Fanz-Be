@@ -14,4 +14,7 @@ interface ChatRoomMemberRepository : JpaRepository<ChatRoomMember, Long> {
 
     // 유저가 참여중인 채팅방 멤버십 목록 (마이프로필의 "참여중인 단체 채팅")
     fun findByUserId(userId: Long): List<ChatRoomMember>
+
+    // 채팅방 삭제 시 멤버 일괄 삭제
+    fun deleteByChatRoomId(chatRoomId: Long)
 }

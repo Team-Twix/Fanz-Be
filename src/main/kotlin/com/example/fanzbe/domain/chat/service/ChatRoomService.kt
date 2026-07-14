@@ -76,6 +76,49 @@ class ChatRoomService(
         )
     }
 
+    /** 방장이 멤버를 추방. */
+    @Transactional
+    fun kickMember(roomId: Long, hostUserId: Long, targetUserId: Long) {
+        val chatRoom = getChatRoom(roomId)
+        requireHost(chatRoom, hostUserId)
+        if (targetUserId == chatRoom.host.id) {
+            throw BusinessException(ErrorCode.CANNOT_KICK_HOST)
+        }
+        val target = getUser(targetUserId)
+        val membership = chatRoomMemberRepository.findByChatRoomAndUser(chatRoom, target)
+            ?: throw BusinessException(ErrorCode.NOT_ROOM_MEMBER)
+        chatRoomMemberRepository.delete(membership)
+    }
+
+    /** 멤버가 채팅방을 나감. 방장은 나갈 수 없음(방 삭제 필요). */
+    @Transactional
+    fun leaveRoom(roomId: Long, userId: Long) {
+        val chatRoom = getChatRoom(roomId)
+        if (chatRoom.host.id == userId) {
+            throw BusinessException(ErrorCode.CANNOT_LEAVE_AS_HOST)
+        }
+        val user = getUser(userId)
+        val membership = chatRoomMemberRepository.findByChatRoomAndUser(chatRoom, user)
+            ?: throw BusinessException(ErrorCode.NOT_ROOM_MEMBER)
+        chatRoomMemberRepository.delete(membership)
+    }
+
+    /** 방장이 채팅방을 삭제(멤버·메시지 함께 정리). */
+    @Transactional
+    fun deleteRoom(roomId: Long, hostUserId: Long) {
+        val chatRoom = getChatRoom(roomId)
+        requireHost(chatRoom, hostUserId)
+        chatMessageRepository.deleteByChatRoomId(roomId)
+        chatRoomMemberRepository.deleteByChatRoomId(roomId)
+        chatRoomRepository.delete(chatRoom)
+    }
+
+    private fun requireHost(chatRoom: ChatRoom, userId: Long) {
+        if (chatRoom.host.id != userId) {
+            throw BusinessException(ErrorCode.NOT_ROOM_HOST)
+        }
+    }
+
     @Transactional(readOnly = true)
     fun getPopularRooms(limit: Int): List<PopularChatRoomResponse> {
         val monthStart = ChatRoomStatistics.currentMonthStart()
