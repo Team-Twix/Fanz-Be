@@ -53,7 +53,7 @@ class SecurityConfig(
 
     @Bean
     fun corsConfigurationSource(): CorsConfigurationSource {
-        val configuration = CorsConfiguration().apply {
+        val apiConfiguration = CorsConfiguration().apply {
             allowedOriginPatterns = this@SecurityConfig.allowedOrigins
                 .split(",")
                 .map(String::trim)
@@ -65,8 +65,17 @@ class SecurityConfig(
             maxAge = 3600
         }
 
+        val publicUploadConfiguration = CorsConfiguration().apply {
+            allowedOrigins = listOf("*")
+            allowedMethods = listOf("GET", "HEAD", "OPTIONS")
+            allowedHeaders = listOf("*")
+            allowCredentials = false
+            maxAge = 3600
+        }
+
         return UrlBasedCorsConfigurationSource().apply {
-            registerCorsConfiguration("/**", configuration)
+            registerCorsConfiguration("/uploads/**", publicUploadConfiguration)
+            registerCorsConfiguration("/**", apiConfiguration)
         }
     }
 
