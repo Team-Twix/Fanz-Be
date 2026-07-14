@@ -2,10 +2,13 @@ package com.example.fanzbe.domain.chat.controller
 
 import com.example.fanzbe.domain.chat.dto.ChatMessageResponse
 import com.example.fanzbe.domain.chat.dto.ChatRoomResponse
+import com.example.fanzbe.domain.chat.dto.ChatRoomMemberResponse
 import com.example.fanzbe.domain.chat.dto.CreateChatRoomRequest
 import com.example.fanzbe.domain.chat.dto.MessagePageResponse
+import com.example.fanzbe.domain.chat.dto.MyChatRoomResponse
 import com.example.fanzbe.domain.chat.dto.PopularChatRoomResponse
 import com.example.fanzbe.domain.chat.dto.SendMessageRequest
+import com.example.fanzbe.domain.chat.dto.RecommendedChatRoomGroupResponse
 import com.example.fanzbe.domain.chat.service.ChatMessageService
 import com.example.fanzbe.domain.chat.service.ChatRoomService
 import com.example.fanzbe.global.common.ApiResponse
@@ -14,6 +17,7 @@ import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -51,6 +55,31 @@ class ChatRoomController(
     ): ApiResponse<List<PopularChatRoomResponse>> =
         ApiResponse.success(chatRoomService.getPopularRooms(limit))
 
+    @GetMapping("/recommended")
+    fun getRecommendedRooms(
+        @AuthenticationPrincipal userDetails: CustomUserDetails,
+    ): ApiResponse<List<RecommendedChatRoomGroupResponse>> =
+        ApiResponse.success(chatRoomService.getRecommendedRooms(userDetails.id))
+
+    @GetMapping("/me")
+    fun getMyRooms(
+        @AuthenticationPrincipal userDetails: CustomUserDetails,
+    ): ApiResponse<List<MyChatRoomResponse>> =
+        ApiResponse.success(chatRoomService.getMyRooms(userDetails.id))
+
+    @GetMapping("/{id}")
+    fun getRoom(
+        @PathVariable("id") id: Long,
+    ): ApiResponse<ChatRoomResponse> =
+        ApiResponse.success(chatRoomService.getRoom(id))
+
+    @GetMapping("/{id}/members")
+    fun getMembers(
+        @PathVariable("id") id: Long,
+        @AuthenticationPrincipal userDetails: CustomUserDetails,
+    ): ApiResponse<List<ChatRoomMemberResponse>> =
+        ApiResponse.success(chatRoomService.getMembers(id, userDetails.id))
+
     @PostMapping("/{id}/join")
     fun joinRoom(
         @PathVariable("id") id: Long,
@@ -62,6 +91,37 @@ class ChatRoomController(
         )
 
         return ResponseEntity.ok(ApiResponse.success())
+    }
+
+    // 채팅방 나가기 (멤버 본인). "/members/me" 는 "/members/{userId}" 보다 우선 매칭됨.
+    @DeleteMapping("/{id}/members/me")
+    fun leaveRoom(
+        @PathVariable("id") id: Long,
+        @AuthenticationPrincipal userDetails: CustomUserDetails,
+    ): ResponseEntity<ApiResponse<Nothing>> {
+        chatRoomService.leaveRoom(roomId = id, userId = userDetails.id)
+        return ResponseEntity.noContent().build()
+    }
+
+    // 방장의 멤버 추방
+    @DeleteMapping("/{id}/members/{userId}")
+    fun kickMember(
+        @PathVariable("id") id: Long,
+        @PathVariable("userId") userId: Long,
+        @AuthenticationPrincipal userDetails: CustomUserDetails,
+    ): ResponseEntity<ApiResponse<Nothing>> {
+        chatRoomService.kickMember(roomId = id, hostUserId = userDetails.id, targetUserId = userId)
+        return ResponseEntity.noContent().build()
+    }
+
+    // 방장의 채팅방 삭제
+    @DeleteMapping("/{id}")
+    fun deleteRoom(
+        @PathVariable("id") id: Long,
+        @AuthenticationPrincipal userDetails: CustomUserDetails,
+    ): ResponseEntity<ApiResponse<Nothing>> {
+        chatRoomService.deleteRoom(roomId = id, hostUserId = userDetails.id)
+        return ResponseEntity.noContent().build()
     }
 
     @GetMapping("/{id}/messages")
@@ -94,6 +154,8 @@ class ChatRoomController(
                         roomId = id,
                         senderUserId = userDetails.id,
                         content = request.content,
+                        messageType = request.messageType,
+                        attachmentUrl = request.attachmentUrl,
                     ),
                 ),
             )

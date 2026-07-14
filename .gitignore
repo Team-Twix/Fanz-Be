@@ -41,3 +41,7 @@ out/
 
 ### Codex ###
 CODEX.md
+
+### Local runtime data / secrets ###
+**/.env
+/uploads/

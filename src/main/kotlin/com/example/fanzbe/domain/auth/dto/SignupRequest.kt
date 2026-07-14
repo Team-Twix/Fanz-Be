@@ -1,8 +1,10 @@
 package com.example.fanzbe.domain.auth.dto
 
 import com.example.fanzbe.domain.user.entity.AgeGroup
+import com.example.fanzbe.domain.user.entity.UserGender
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotNull
+import jakarta.validation.constraints.Pattern
 import jakarta.validation.constraints.Size
 
 /**
@@ -13,6 +15,7 @@ data class SignupRequest(
 
     @field:NotBlank
     @field:Size(min = 4, max = 20)
+    @field:Pattern(regexp = "[A-Za-z0-9._-]+")
     val username: String,
 
     @field:NotBlank
@@ -26,9 +29,22 @@ data class SignupRequest(
     @field:Size(max = 50)
     val nickname: String,
 
+    // 나이대 (그룹으로 수신)
     @field:NotNull
     val ageGroup: AgeGroup,
 
     // 관심 카테고리
+    @field:Size(max = 20)
     val interests: List<String> = emptyList(),
+
+    val gender: UserGender = UserGender.UNSPECIFIED,
+
+    @field:Size(max = 500)
+    val bio: String? = null,
+
+    @field:Size(max = 2048)
+    val profileImageUrl: String? = null,
+
+    @field:Size(max = 2048)
+    val coverImageUrl: String? = null,
 )

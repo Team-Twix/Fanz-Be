@@ -5,8 +5,11 @@ import com.example.fanzbe.domain.auth.dto.ReissueRequest
 import com.example.fanzbe.domain.auth.dto.SignupRequest
 import com.example.fanzbe.domain.auth.dto.SignupResponse
 import com.example.fanzbe.domain.auth.dto.TokenResponse
+import com.example.fanzbe.domain.auth.dto.UsernameAvailabilityResponse
 import com.example.fanzbe.domain.auth.entity.RefreshToken
 import com.example.fanzbe.domain.auth.repository.RefreshTokenRepository
+import com.example.fanzbe.domain.profile.entity.Profile
+import com.example.fanzbe.domain.profile.repository.ProfileRepository
 import com.example.fanzbe.domain.user.entity.User
 import com.example.fanzbe.domain.user.repository.UserRepository
 import com.example.fanzbe.global.exception.BusinessException
@@ -21,6 +24,7 @@ import java.time.LocalDateTime
 @Service
 class AuthService(
     private val userRepository: UserRepository,
+    private val profileRepository: ProfileRepository,
     private val refreshTokenRepository: RefreshTokenRepository,
     private val passwordEncoder: PasswordEncoder,
     private val jwtProvider: JwtProvider,
@@ -33,7 +37,8 @@ class AuthService(
         if (request.password != request.passwordConfirm) {
             throw BusinessException(ErrorCode.PASSWORD_MISMATCH)
         }
-        if (userRepository.existsByUsername(request.username)) {
+        val username = request.username.trim()
+        if (userRepository.existsByUsername(username)) {
             throw BusinessException(ErrorCode.USERNAME_DUPLICATED)
         }
 
@@ -42,22 +47,37 @@ class AuthService(
         }
         val user = userRepository.save(
             User(
-                username = request.username,
+                username = username,
                 password = encodedPassword,
-                nickname = request.nickname,
+                nickname = request.nickname.trim(),
                 ageGroup = request.ageGroup,
-                interests = request.interests
-                    .mapNotNull { it.trim().takeIf(String::isNotEmpty) }
-                    .toMutableSet(),
+                gender = request.gender,
+                interests = request.interests.normalizeTags(),
+            ),
+        )
+
+        profileRepository.save(
+            Profile(
+                user = user,
+                bio = request.bio.normalizeNullable(),
+                profileImageUrl = request.profileImageUrl.normalizeNullable(),
+                coverImageUrl = request.coverImageUrl.normalizeNullable(),
             ),
         )
 
         return SignupResponse(userId = requireNotNull(user.id))
     }
 
+    @Transactional(readOnly = true)
+    fun getUsernameAvailability(username: String): UsernameAvailabilityResponse {
+        val normalized = username.trim()
+        val available = USERNAME_PATTERN.matches(normalized) && !userRepository.existsByUsername(normalized)
+        return UsernameAvailabilityResponse(username = normalized, available = available)
+    }
+
     @Transactional
     fun login(request: LoginRequest): TokenResponse {
-        val user = userRepository.findByUsername(request.username)
+        val user = userRepository.findByUsername(request.username.trim())
             ?: throw BusinessException(ErrorCode.INVALID_CREDENTIALS)
         if (!passwordEncoder.matches(request.password, user.password)) {
             throw BusinessException(ErrorCode.INVALID_CREDENTIALS)
@@ -103,5 +123,17 @@ class AuthService(
         }
 
         return TokenResponse(accessToken = accessToken, refreshToken = refreshToken)
+    }
+
+    private fun String?.normalizeNullable(): String? =
+        this?.trim()?.takeIf { it.isNotEmpty() }
+
+    private fun List<String>.normalizeTags(): MutableSet<String> =
+        mapNotNull { tag ->
+            tag.trim().removePrefix("#").lowercase().takeIf(String::isNotEmpty)
+        }.toMutableSet()
+
+    companion object {
+        private val USERNAME_PATTERN = Regex("^[A-Za-z0-9._-]{4,20}$")
     }
 }

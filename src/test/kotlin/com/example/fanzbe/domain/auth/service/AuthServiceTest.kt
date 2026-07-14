@@ -4,7 +4,9 @@ import com.example.fanzbe.domain.auth.dto.LoginRequest
 import com.example.fanzbe.domain.auth.dto.ReissueRequest
 import com.example.fanzbe.domain.auth.dto.SignupRequest
 import com.example.fanzbe.domain.auth.repository.RefreshTokenRepository
+import com.example.fanzbe.domain.profile.repository.ProfileRepository
 import com.example.fanzbe.domain.user.entity.AgeGroup
+import com.example.fanzbe.domain.user.entity.UserGender
 import com.example.fanzbe.domain.user.repository.UserRepository
 import com.example.fanzbe.global.exception.BusinessException
 import com.example.fanzbe.global.exception.ErrorCode
@@ -27,6 +29,7 @@ class AuthServiceTest(
     @Autowired private val authService: AuthService,
     @Autowired private val userRepository: UserRepository,
     @Autowired private val refreshTokenRepository: RefreshTokenRepository,
+    @Autowired private val profileRepository: ProfileRepository,
     @Autowired private val passwordEncoder: PasswordEncoder,
 ) {
 
@@ -34,13 +37,17 @@ class AuthServiceTest(
         username: String = "fanuser",
         password: String = "password123",
         passwordConfirm: String = "password123",
+        ageGroup: AgeGroup = AgeGroup.TWENTIES,
     ) = SignupRequest(
         username = username,
         password = password,
         passwordConfirm = passwordConfirm,
         nickname = "fan",
-        ageGroup = AgeGroup.TWENTIES,
+        ageGroup = ageGroup,
         interests = listOf("에반게리온", " "),
+        gender = UserGender.FEMALE,
+        bio = "같이 덕질해요",
+        profileImageUrl = "/uploads/profile.png",
     )
 
     @Test
@@ -50,7 +57,12 @@ class AuthServiceTest(
         val user = userRepository.findById(response.userId).orElseThrow()
         assertTrue(passwordEncoder.matches("password123", user.password))
         assertEquals(AgeGroup.TWENTIES, user.ageGroup)
+        assertEquals(UserGender.FEMALE, user.gender)
         assertEquals(setOf("에반게리온"), user.interests) // 공백 항목은 제거
+        val profile = profileRepository.findByUserId(user.id!!)
+        assertNotNull(profile)
+        assertEquals("같이 덕질해요", profile.bio)
+        assertEquals("/uploads/profile.png", profile.profileImageUrl)
     }
 
     @Test
@@ -68,6 +80,16 @@ class AuthServiceTest(
             authService.signup(signupRequest(username = "dupuser"))
         }
         assertEquals(ErrorCode.USERNAME_DUPLICATED, ex.errorCode)
+    }
+
+    @Test
+    fun `아이디 사용 가능 여부는 형식과 중복을 함께 확인한다`() {
+        assertTrue(authService.getUsernameAvailability("new_user").available)
+        assertTrue(!authService.getUsernameAvailability("bad user").available)
+
+        authService.signup(signupRequest(username = "taken_user"))
+
+        assertTrue(!authService.getUsernameAvailability("taken_user").available)
     }
 
     @Test
