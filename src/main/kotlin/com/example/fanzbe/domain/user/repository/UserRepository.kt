@@ -12,6 +12,20 @@ interface UserRepository : JpaRepository<User, Long> {
 
     @Query(
         """
+        select distinct u
+        from User u
+        join u.interests i
+        where u.id <> :userId
+          and i in :interests
+        """,
+    )
+    fun findCandidatesByInterests(
+        @Param("userId") userId: Long,
+        @Param("interests") interests: Collection<String>,
+    ): List<User>
+
+    @Query(
+        """
         select distinct u from User u
         where u.id <> :currentUserId
           and (:nickname is null or lower(u.nickname) like lower(concat('%', :nickname, '%')))
