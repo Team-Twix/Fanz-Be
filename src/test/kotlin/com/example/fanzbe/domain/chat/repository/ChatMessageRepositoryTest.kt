@@ -71,7 +71,7 @@ class ChatMessageRepositoryTest(
 
     private fun createUser(nickname: String): User =
         userRepository.save(
-            User(password = "encoded", nickname = nickname),
+            User(username = nickname, password = "encoded", nickname = nickname),
         )
 
     private fun createRoom(host: User): ChatRoom =

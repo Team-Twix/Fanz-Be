@@ -7,6 +7,11 @@ import com.example.fanzbe.domain.chat.entity.ChatRoomMember
 import com.example.fanzbe.domain.chat.repository.ChatMessageRepository
 import com.example.fanzbe.domain.chat.repository.ChatRoomMemberRepository
 import com.example.fanzbe.domain.chat.repository.ChatRoomRepository
+import com.example.fanzbe.domain.dm.dto.DirectMessageResponse
+import com.example.fanzbe.domain.dm.repository.DirectChatRoomMemberRepository
+import com.example.fanzbe.domain.dm.repository.DirectChatRoomRepository
+import com.example.fanzbe.domain.dm.repository.DirectMessageRepository
+import com.example.fanzbe.domain.dm.service.DirectChatService
 import com.example.fanzbe.domain.user.entity.User
 import com.example.fanzbe.domain.user.repository.UserRepository
 import com.example.fanzbe.global.security.JwtProvider
@@ -41,6 +46,10 @@ class ChatRealtimeE2eTest(
     @Autowired private val chatRoomRepository: ChatRoomRepository,
     @Autowired private val chatRoomMemberRepository: ChatRoomMemberRepository,
     @Autowired private val chatMessageRepository: ChatMessageRepository,
+    @Autowired private val directChatService: DirectChatService,
+    @Autowired private val directChatRoomRepository: DirectChatRoomRepository,
+    @Autowired private val directChatRoomMemberRepository: DirectChatRoomMemberRepository,
+    @Autowired private val directMessageRepository: DirectMessageRepository,
     @Autowired private val environment: Environment,
 ) {
 
@@ -48,7 +57,7 @@ class ChatRealtimeE2eTest(
     fun `JWT 로 연결해 보낸 메시지가 구독자에게 실시간 전달되고 저장된다`() {
         // 서버가 별도 스레드에서 도므로 데이터는 커밋되어 있어야 한다(@Transactional 미사용).
         val user = userRepository.save(
-            User(password = "encoded", nickname = "realtime"),
+            User(username = "realtime-user", password = "encoded", nickname = "rt"),
         )
         val room = chatRoomRepository.save(
             ChatRoom(name = "room", hashtags = mutableSetOf("anime"), host = user),
@@ -99,11 +108,68 @@ class ChatRealtimeE2eTest(
             assertEquals(1, stored.size)
             assertEquals("안녕 실시간", stored.first().content)
         } finally {
-            session.disconnect()
+            if (session.isConnected) {
+                session.disconnect()
+            }
             // 이 테스트는 @Transactional 이 아니라 커밋되므로, 공유 H2 오염을 막기 위해 직접 정리한다.
             chatMessageRepository.deleteAll()
             chatRoomMemberRepository.deleteAll()
             chatRoomRepository.deleteAll()
+            userRepository.deleteAll()
+        }
+    }
+
+    @Test
+    fun `JWT 로 연결해 보낸 DM이 상대 topic에 전달되고 저장된다`() {
+        val sender = userRepository.save(
+            User(username = "dm-realtime-sender", password = "encoded", nickname = "sender"),
+        )
+        val receiver = userRepository.save(
+            User(username = "dm-realtime-receiver", password = "encoded", nickname = "receiver"),
+        )
+        val room = directChatService.openRoom(sender.id!!, receiver.id!!)
+        val token = jwtProvider.createAccessToken(sender.id!!)
+        val stompClient = WebSocketStompClient(StandardWebSocketClient())
+        val connectHeaders = StompHeaders().apply { add("Authorization", "Bearer $token") }
+        val session = stompClient
+            .connectAsync(
+                "ws://localhost:${port()}/ws",
+                WebSocketHttpHeaders(),
+                connectHeaders,
+                object : StompSessionHandlerAdapter() {},
+            )
+            .get(5, TimeUnit.SECONDS)
+
+        try {
+            val received = ArrayBlockingQueue<ByteArray>(1)
+            session.subscribe(
+                "/topic/dm-rooms/${room.id}",
+                object : StompFrameHandler {
+                    override fun getPayloadType(headers: StompHeaders) = ByteArray::class.java
+                    override fun handleFrame(headers: StompHeaders, payload: Any?) {
+                        received.add(payload as ByteArray)
+                    }
+                },
+            )
+            Thread.sleep(500)
+
+            val sendHeaders = StompHeaders().apply {
+                destination = "/app/dm-rooms/${room.id}"
+                contentType = MimeType.valueOf("application/json")
+            }
+            session.send(sendHeaders, objectMapper.writeValueAsBytes(SendMessageRequest(content = "DM 실시간")))
+
+            val payload = assertNotNull(received.poll(5, TimeUnit.SECONDS), "DM 브로드캐스트 수신 실패")
+            val response = objectMapper.readValue(payload, DirectMessageResponse::class.java)
+            assertEquals("DM 실시간", response.content)
+            assertEquals(room.id, response.dmRoomId)
+            assertEquals(sender.id, response.senderId)
+            assertEquals("DM 실시간", directMessageRepository.findAll().single().content)
+        } finally {
+            session.disconnect()
+            directMessageRepository.deleteAll()
+            directChatRoomMemberRepository.deleteAll()
+            directChatRoomRepository.deleteAll()
             userRepository.deleteAll()
         }
     }

@@ -6,19 +6,49 @@ import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 
 interface UserRepository : JpaRepository<User, Long> {
-    fun findByNickname(nickname: String): User?
+    fun findByUsername(username: String): User?
 
-    fun existsByNickname(nickname: String): Boolean
+    fun existsByUsername(username: String): Boolean
 
     fun findByNicknameContainingIgnoreCase(nickname: String): List<User>
 
     @Query(
         """
-        select distinct user
-        from User user
-        join user.hashtags hashtag
-        where lower(hashtag) = lower(:hashtag)
+        select distinct u
+        from User u
+        join u.interests interest
+        where lower(interest) = lower(:hashtag)
         """,
     )
     fun findByHashtagIgnoreCase(@Param("hashtag") hashtag: String): List<User>
+
+    @Query(
+        """
+        select distinct u
+        from User u
+        join u.interests i
+        where u.id <> :userId
+          and lower(i) in :interests
+        """,
+    )
+    fun findCandidatesByInterests(
+        @Param("userId") userId: Long,
+        @Param("interests") interests: Collection<String>,
+    ): List<User>
+
+    @Query(
+        """
+        select distinct u from User u
+        left join u.interests i
+        where u.id <> :currentUserId
+          and (:nickname is null or lower(u.nickname) like lower(concat('%', :nickname, '%')))
+          and (:hashtag is null or lower(i) = :hashtag)
+        order by u.id desc
+        """,
+    )
+    fun search(
+        @Param("currentUserId") currentUserId: Long,
+        @Param("nickname") nickname: String?,
+        @Param("hashtag") hashtag: String?,
+    ): List<User>
 }

@@ -37,12 +37,13 @@ class UserRepositoryTest(
         assertEquals(setOf(first.id, second.id), result.map { it.id }.toSet())
     }
 
-    private fun saveUser(nickname: String, vararg hashtags: String): User =
+    private fun saveUser(nickname: String, vararg interests: String): User =
         userRepository.save(
             User(
+                username = "${nickname.lowercase()}-account",
                 password = "encoded",
                 nickname = nickname,
-                hashtags = hashtags.toMutableSet(),
+                interests = interests.toMutableSet(),
             ),
         )
 }

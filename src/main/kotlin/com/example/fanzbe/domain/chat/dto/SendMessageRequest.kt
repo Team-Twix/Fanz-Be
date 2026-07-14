@@ -1,11 +1,15 @@
 package com.example.fanzbe.domain.chat.dto
 
-import jakarta.validation.constraints.NotBlank
+import com.example.fanzbe.domain.chat.entity.MessageType
 import jakarta.validation.constraints.Size
 
 data class SendMessageRequest(
 
-    @field:NotBlank
     @field:Size(max = 2000)
-    val content: String,
+    val content: String? = null,
+
+    val messageType: MessageType = MessageType.TEXT,
+
+    @field:Size(max = 2048)
+    val attachmentUrl: String? = null,
 )
