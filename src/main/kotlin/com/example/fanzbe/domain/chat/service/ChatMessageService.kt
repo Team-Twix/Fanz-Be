@@ -1,6 +1,7 @@
 package com.example.fanzbe.domain.chat.service
 
 import com.example.fanzbe.domain.chat.dto.ChatMessageResponse
+import com.example.fanzbe.domain.chat.dto.MessagePageResponse
 import com.example.fanzbe.domain.chat.entity.ChatMessage
 import com.example.fanzbe.domain.chat.entity.ChatRoom
 import com.example.fanzbe.domain.chat.repository.ChatMessageRepository
@@ -10,6 +11,8 @@ import com.example.fanzbe.domain.user.entity.User
 import com.example.fanzbe.domain.user.repository.UserRepository
 import com.example.fanzbe.global.exception.BusinessException
 import com.example.fanzbe.global.exception.ErrorCode
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
@@ -39,6 +42,22 @@ class ChatMessageService(
         )
 
         return chatMessage.toResponse()
+    }
+
+    /** 채팅방 메시지 이력 조회 (최신순). 방 멤버만 열람 가능. */
+    @Transactional(readOnly = true)
+    fun getMessages(roomId: Long, userId: Long, page: Int, size: Int): MessagePageResponse {
+        val chatRoom = getChatRoom(roomId)
+        val user = getUser(userId)
+        if (!chatRoomMemberRepository.existsByChatRoomAndUser(chatRoom, user)) {
+            throw BusinessException(ErrorCode.NOT_ROOM_MEMBER)
+        }
+
+        val pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"))
+        val messages = chatMessageRepository.findByChatRoomId(roomId, pageable)
+            .map { it.toResponse() }
+
+        return MessagePageResponse.of(messages)
     }
 
     private fun ChatMessage.toResponse(): ChatMessageResponse =

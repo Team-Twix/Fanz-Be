@@ -3,6 +3,7 @@ package com.example.fanzbe.domain.chat.controller
 import com.example.fanzbe.domain.chat.dto.ChatMessageResponse
 import com.example.fanzbe.domain.chat.dto.ChatRoomResponse
 import com.example.fanzbe.domain.chat.dto.CreateChatRoomRequest
+import com.example.fanzbe.domain.chat.dto.MessagePageResponse
 import com.example.fanzbe.domain.chat.dto.PopularChatRoomResponse
 import com.example.fanzbe.domain.chat.dto.SendMessageRequest
 import com.example.fanzbe.domain.chat.service.ChatMessageService
@@ -62,6 +63,22 @@ class ChatRoomController(
 
         return ResponseEntity.ok(ApiResponse.success())
     }
+
+    @GetMapping("/{id}/messages")
+    fun getMessages(
+        @PathVariable("id") id: Long,
+        @AuthenticationPrincipal userDetails: CustomUserDetails,
+        @RequestParam(name = "page", defaultValue = "0") page: Int,
+        @RequestParam(name = "size", defaultValue = "30") size: Int,
+    ): ApiResponse<MessagePageResponse> =
+        ApiResponse.success(
+            chatMessageService.getMessages(
+                roomId = id,
+                userId = userDetails.id,
+                page = page,
+                size = size,
+            ),
+        )
 
     @PostMapping("/{id}/messages")
     fun sendMessage(
