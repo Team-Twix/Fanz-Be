@@ -22,18 +22,16 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@RequestMapping("/api/chat-rooms")
 class ChatRoomController(
     private val chatRoomService: ChatRoomService,
     private val chatMessageService: ChatMessageService,
 ) {
 
-    @PostMapping
+    @PostMapping("/api/chat-rooms")
     fun createRoom(
         @AuthenticationPrincipal userDetails: CustomUserDetails,
         @Valid @RequestBody request: CreateChatRoomRequest,
@@ -42,45 +40,45 @@ class ChatRoomController(
             .status(HttpStatus.CREATED)
             .body(ApiResponse.success(chatRoomService.createRoom(userDetails.id, request)))
 
-    @GetMapping
+    @GetMapping("/api/chat-rooms")
     fun getRooms(
         @RequestParam(name = "hashtag", required = false) hashtag: String?,
         @RequestParam(name = "keyword", required = false) keyword: String?,
     ): ApiResponse<List<ChatRoomResponse>> =
         ApiResponse.success(chatRoomService.getRooms(hashtag, keyword))
 
-    @GetMapping("/popular")
+    @GetMapping("/api/chat-rooms/popular")
     fun getPopularRooms(
         @RequestParam(name = "limit", defaultValue = "4") limit: Int,
     ): ApiResponse<List<PopularChatRoomResponse>> =
         ApiResponse.success(chatRoomService.getPopularRooms(limit))
 
-    @GetMapping("/recommended")
+    @GetMapping("/api/chat-rooms/recommended")
     fun getRecommendedRooms(
         @AuthenticationPrincipal userDetails: CustomUserDetails,
     ): ApiResponse<List<RecommendedChatRoomGroupResponse>> =
         ApiResponse.success(chatRoomService.getRecommendedRooms(userDetails.id))
 
-    @GetMapping("/me")
+    @GetMapping("/api/chat-rooms/me")
     fun getMyRooms(
         @AuthenticationPrincipal userDetails: CustomUserDetails,
     ): ApiResponse<List<MyChatRoomResponse>> =
         ApiResponse.success(chatRoomService.getMyRooms(userDetails.id))
 
-    @GetMapping("/{id}")
+    @GetMapping("/api/chat-rooms/{id}")
     fun getRoom(
         @PathVariable("id") id: Long,
     ): ApiResponse<ChatRoomResponse> =
         ApiResponse.success(chatRoomService.getRoom(id))
 
-    @GetMapping("/{id}/members")
+    @GetMapping("/api/chat-rooms/{id}/members")
     fun getMembers(
         @PathVariable("id") id: Long,
         @AuthenticationPrincipal userDetails: CustomUserDetails,
     ): ApiResponse<List<ChatRoomMemberResponse>> =
         ApiResponse.success(chatRoomService.getMembers(id, userDetails.id))
 
-    @PostMapping("/{id}/join")
+    @PostMapping("/api/chat-rooms/{id}/join")
     fun joinRoom(
         @PathVariable("id") id: Long,
         @AuthenticationPrincipal userDetails: CustomUserDetails,
@@ -94,7 +92,7 @@ class ChatRoomController(
     }
 
     // 채팅방 나가기 (멤버 본인). "/members/me" 는 "/members/{userId}" 보다 우선 매칭됨.
-    @DeleteMapping("/{id}/members/me")
+    @DeleteMapping("/api/chat-rooms/{id}/members/me")
     fun leaveRoom(
         @PathVariable("id") id: Long,
         @AuthenticationPrincipal userDetails: CustomUserDetails,
@@ -104,7 +102,7 @@ class ChatRoomController(
     }
 
     // 방장의 멤버 추방
-    @DeleteMapping("/{id}/members/{userId}")
+    @DeleteMapping("/api/chat-rooms/{id}/members/{userId}")
     fun kickMember(
         @PathVariable("id") id: Long,
         @PathVariable("userId") userId: Long,
@@ -115,7 +113,7 @@ class ChatRoomController(
     }
 
     // 방장의 채팅방 삭제
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/api/chat-rooms/{id}")
     fun deleteRoom(
         @PathVariable("id") id: Long,
         @AuthenticationPrincipal userDetails: CustomUserDetails,
@@ -124,7 +122,7 @@ class ChatRoomController(
         return ResponseEntity.noContent().build()
     }
 
-    @GetMapping("/{id}/messages")
+    @GetMapping("/api/chat-rooms/{id}/messages")
     fun getMessages(
         @PathVariable("id") id: Long,
         @AuthenticationPrincipal userDetails: CustomUserDetails,
@@ -140,7 +138,7 @@ class ChatRoomController(
             ),
         )
 
-    @PostMapping("/{id}/messages")
+    @PostMapping("/api/chat-rooms/{id}/messages")
     fun sendMessage(
         @PathVariable("id") id: Long,
         @AuthenticationPrincipal userDetails: CustomUserDetails,

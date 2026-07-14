@@ -5,6 +5,7 @@ import com.example.fanzbe.domain.chat.entity.ChatRoomMember
 import com.example.fanzbe.domain.chat.repository.ChatRoomMemberRepository
 import com.example.fanzbe.domain.chat.repository.ChatRoomRepository
 import com.example.fanzbe.domain.dm.service.DirectChatService
+import com.example.fanzbe.domain.dm.service.DmService
 import com.example.fanzbe.domain.user.entity.User
 import com.example.fanzbe.domain.user.repository.UserRepository
 import kotlin.test.Test
@@ -37,6 +38,7 @@ class StompAuthChannelInterceptorTest(
     @Autowired private val chatRoomRepository: ChatRoomRepository,
     @Autowired private val chatRoomMemberRepository: ChatRoomMemberRepository,
     @Autowired private val directChatService: DirectChatService,
+    @Autowired private val dmService: DmService,
 ) {
 
     private val channel = ExecutorSubscribableChannel()
@@ -44,7 +46,7 @@ class StompAuthChannelInterceptorTest(
     @Test
     fun `CONNECT with valid bearer token sets authenticated user`() {
         val user = userRepository.save(
-            User(username ="stomp-user@fanz.com", password = "encoded", nickname = "stomp"),
+            User(username = "stomp-user", password = "encoded", nickname = "stomp"),
         )
         val token = jwtProvider.createAccessToken(user.id!!)
         val message = connectMessage("Bearer $token")
@@ -55,7 +57,7 @@ class StompAuthChannelInterceptorTest(
         val principal = assertIs<CustomUserDetails>(authentication.principal)
 
         assertEquals(user.id, principal.id)
-        assertEquals("stomp-user@fanz.com", principal.username)
+        assertEquals("stomp-user", principal.username)
     }
 
     @Test
@@ -98,6 +100,30 @@ class StompAuthChannelInterceptorTest(
         )
         assertFailsWith<MessageDeliveryException> {
             interceptor.preSend(subscribeMessage("/topic/dm-rooms/${room.id}", outsider), channel)
+        }
+    }
+
+    @Test
+    fun `기존 DM 경로도 대화 참여자만 구독하고 전송할 수 있다`() {
+        val first = createUser("legacy-dm-first")
+        val second = createUser("legacy-dm-second")
+        val outsider = createUser("legacy-dm-outsider")
+        val roomId = dmService.getOrCreateRoom(first.id!!, second.id!!).roomId
+
+        assertNotNull(
+            interceptor.preSend(
+                subscribeMessage("/topic/dm/rooms/$roomId", second),
+                channel,
+            ),
+        )
+        assertNotNull(
+            interceptor.preSend(
+                stompMessage(StompCommand.SEND, "/app/dm/rooms/$roomId", first),
+                channel,
+            ),
+        )
+        assertFailsWith<MessageDeliveryException> {
+            interceptor.preSend(subscribeMessage("/topic/dm/rooms/$roomId", outsider), channel)
         }
     }
 

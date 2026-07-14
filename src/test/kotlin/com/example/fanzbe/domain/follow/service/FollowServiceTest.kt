@@ -23,7 +23,7 @@ class FollowServiceTest(
     @Test
     fun `자기 자신을 팔로우하면 CANNOT_FOLLOW_SELF 예외가 발생한다`() {
         val user = userRepository.save(
-            User(username ="self@fanz.com", password = "encoded", nickname = "self"),
+            User(username = "self", password = "encoded", nickname = "self"),
         )
 
         val exception = assertFailsWith<BusinessException> {

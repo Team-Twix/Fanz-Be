@@ -32,9 +32,9 @@ class ProfileServiceTest(
 
     @Test
     fun `프로필이 없으면 기본 프로필을 생성하고 팔로워 팔로잉 수와 참여중인 채팅방을 반환한다`() {
-        val owner = createUser("owner@fanz.com", "owner")
-        val follower = createUser("follower@fanz.com", "follower")
-        val following = createUser("following@fanz.com", "following")
+        val owner = createUser("owner")
+        val follower = createUser("follower")
+        val following = createUser("following")
         followRepository.save(Follow(follower = follower, followee = owner))
         followRepository.save(Follow(follower = owner, followee = following))
 
@@ -64,8 +64,8 @@ class ProfileServiceTest(
         assertEquals("anime fans", response.joinedChatRooms[0].description)
     }
 
-    private fun createUser(email: String, nickname: String): User =
+    private fun createUser(nickname: String): User =
         userRepository.save(
-            User(username =email, password = "encoded", nickname = nickname),
+            User(username = nickname, password = "encoded", nickname = nickname),
         )
 }

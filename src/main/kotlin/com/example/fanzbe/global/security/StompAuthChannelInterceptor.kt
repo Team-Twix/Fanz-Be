@@ -2,6 +2,7 @@ package com.example.fanzbe.global.security
 
 import com.example.fanzbe.domain.chat.repository.ChatRoomMemberRepository
 import com.example.fanzbe.domain.dm.repository.DirectChatRoomMemberRepository
+import com.example.fanzbe.domain.dm.repository.DmRoomRepository
 import org.springframework.http.HttpHeaders
 import org.springframework.messaging.Message
 import org.springframework.messaging.MessageChannel
@@ -21,6 +22,7 @@ class StompAuthChannelInterceptor(
     private val customUserDetailsService: CustomUserDetailsService,
     private val chatRoomMemberRepository: ChatRoomMemberRepository,
     private val directChatRoomMemberRepository: DirectChatRoomMemberRepository,
+    private val dmRoomRepository: DmRoomRepository,
 ) : ChannelInterceptor {
 
     override fun preSend(message: Message<*>, channel: MessageChannel): Message<*> {
@@ -78,6 +80,8 @@ class StompAuthChannelInterceptor(
             chatRoomMemberRepository.existsByChatRoomIdAndUserId(roomId, userDetails.id)
         } ?: DM_ROOM_TOPIC.matchEntire(destination)?.groupValues?.get(1)?.toLongOrNull()?.let { roomId ->
             directChatRoomMemberRepository.existsByDirectChatRoomIdAndUserId(roomId, userDetails.id)
+        } ?: LEGACY_DM_ROOM_TOPIC.matchEntire(destination)?.roomId()?.let { roomId ->
+            dmRoomRepository.findById(roomId).filter { it.hasParticipant(userDetails.id) }.isPresent
         } ?: false
 
         if (!allowed) {
@@ -97,6 +101,8 @@ class StompAuthChannelInterceptor(
             chatRoomMemberRepository.existsByChatRoomIdAndUserId(roomId, userDetails.id)
         } ?: APP_DM_ROOM.matchEntire(destination)?.roomId()?.let { roomId ->
             directChatRoomMemberRepository.existsByDirectChatRoomIdAndUserId(roomId, userDetails.id)
+        } ?: LEGACY_APP_DM_ROOM.matchEntire(destination)?.roomId()?.let { roomId ->
+            dmRoomRepository.findById(roomId).filter { it.hasParticipant(userDetails.id) }.isPresent
         } ?: false
 
         if (!allowed) {
@@ -137,7 +143,9 @@ class StompAuthChannelInterceptor(
         private const val BEARER_PREFIX = "Bearer "
         private val CHAT_ROOM_TOPIC = Regex("^/topic/chat-rooms/(\\d+)$")
         private val DM_ROOM_TOPIC = Regex("^/topic/dm-rooms/(\\d+)$")
+        private val LEGACY_DM_ROOM_TOPIC = Regex("^/topic/dm/rooms/(\\d+)$")
         private val APP_CHAT_ROOM = Regex("^/app/chat-rooms/(\\d+)$")
         private val APP_DM_ROOM = Regex("^/app/dm-rooms/(\\d+)$")
+        private val LEGACY_APP_DM_ROOM = Regex("^/app/dm/rooms/(\\d+)$")
     }
 }

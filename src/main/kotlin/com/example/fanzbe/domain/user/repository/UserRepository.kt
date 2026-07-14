@@ -10,6 +10,18 @@ interface UserRepository : JpaRepository<User, Long> {
 
     fun existsByUsername(username: String): Boolean
 
+    fun findByNicknameContainingIgnoreCase(nickname: String): List<User>
+
+    @Query(
+        """
+        select distinct u
+        from User u
+        join u.interests interest
+        where lower(interest) = lower(:hashtag)
+        """,
+    )
+    fun findByHashtagIgnoreCase(@Param("hashtag") hashtag: String): List<User>
+
     @Query(
         """
         select distinct u

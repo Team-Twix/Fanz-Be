@@ -83,7 +83,9 @@ class DmRealtimeE2eTest(
             assertEquals("안녕 DM", response.content)
             assertEquals(sender.id, response.senderId)
         } finally {
-            session.disconnect()
+            if (session.isConnected) {
+                session.disconnect()
+            }
             dmMessageRepository.deleteAll()
             dmRoomRepository.deleteAll()
             userRepository.deleteAll()

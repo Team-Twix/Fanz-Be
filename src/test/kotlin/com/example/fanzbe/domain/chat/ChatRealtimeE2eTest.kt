@@ -57,7 +57,7 @@ class ChatRealtimeE2eTest(
     fun `JWT 로 연결해 보낸 메시지가 구독자에게 실시간 전달되고 저장된다`() {
         // 서버가 별도 스레드에서 도므로 데이터는 커밋되어 있어야 한다(@Transactional 미사용).
         val user = userRepository.save(
-            User(username ="realtime@fanz.com", password = "encoded", nickname = "rt"),
+            User(username = "realtime-user", password = "encoded", nickname = "rt"),
         )
         val room = chatRoomRepository.save(
             ChatRoom(name = "room", hashtags = mutableSetOf("anime"), host = user),
@@ -108,7 +108,9 @@ class ChatRealtimeE2eTest(
             assertEquals(1, stored.size)
             assertEquals("안녕 실시간", stored.first().content)
         } finally {
-            session.disconnect()
+            if (session.isConnected) {
+                session.disconnect()
+            }
             // 이 테스트는 @Transactional 이 아니라 커밋되므로, 공유 H2 오염을 막기 위해 직접 정리한다.
             chatMessageRepository.deleteAll()
             chatRoomMemberRepository.deleteAll()
