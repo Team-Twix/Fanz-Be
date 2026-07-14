@@ -17,18 +17,16 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 
 @RestController
-@RequestMapping("/api/chat-rooms")
 class ChatRoomController(
     private val chatRoomService: ChatRoomService,
     private val chatMessageService: ChatMessageService,
 ) {
 
-    @PostMapping
+    @PostMapping("/api/chat-rooms")
     fun createRoom(
         @AuthenticationPrincipal userDetails: CustomUserDetails,
         @Valid @RequestBody request: CreateChatRoomRequest,
@@ -37,20 +35,20 @@ class ChatRoomController(
             .status(HttpStatus.CREATED)
             .body(ApiResponse.success(chatRoomService.createRoom(userDetails.id, request)))
 
-    @GetMapping
+    @GetMapping("/api/chat-rooms")
     fun getRooms(
         @RequestParam(name = "hashtag", required = false) hashtag: String?,
         @RequestParam(name = "keyword", required = false) keyword: String?,
     ): ApiResponse<List<ChatRoomResponse>> =
         ApiResponse.success(chatRoomService.getRooms(hashtag, keyword))
 
-    @GetMapping("/popular")
+    @GetMapping("/api/chat-rooms/popular")
     fun getPopularRooms(
         @RequestParam(name = "limit", defaultValue = "4") limit: Int,
     ): ApiResponse<List<PopularChatRoomResponse>> =
         ApiResponse.success(chatRoomService.getPopularRooms(limit))
 
-    @PostMapping("/{id}/join")
+    @PostMapping("/api/chat-rooms/{id}/join")
     fun joinRoom(
         @PathVariable("id") id: Long,
         @AuthenticationPrincipal userDetails: CustomUserDetails,
@@ -63,7 +61,7 @@ class ChatRoomController(
         return ResponseEntity.ok(ApiResponse.success())
     }
 
-    @PostMapping("/{id}/messages")
+    @PostMapping("/api/chat-rooms/{id}/messages")
     fun sendMessage(
         @PathVariable("id") id: Long,
         @AuthenticationPrincipal userDetails: CustomUserDetails,
