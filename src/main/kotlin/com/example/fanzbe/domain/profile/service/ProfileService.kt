@@ -5,6 +5,7 @@ import com.example.fanzbe.domain.follow.repository.FollowRepository
 import com.example.fanzbe.domain.profile.dto.JoinedChatRoomResponse
 import com.example.fanzbe.domain.profile.dto.MyProfileResponse
 import com.example.fanzbe.domain.profile.dto.UpdateProfileRequest
+import com.example.fanzbe.domain.profile.dto.UserProfileResponse
 import com.example.fanzbe.domain.profile.entity.Profile
 import com.example.fanzbe.domain.profile.repository.ProfileRepository
 import com.example.fanzbe.domain.user.repository.UserRepository
@@ -25,6 +26,27 @@ class ProfileService(
     @Transactional
     fun getMyProfile(userId: Long): MyProfileResponse =
         getOrCreateProfile(userId).toResponse()
+
+    @Transactional
+    fun getUserProfile(targetUserId: Long, currentUserId: Long): UserProfileResponse {
+        val profile = getOrCreateProfile(targetUserId)
+        val isFollowing = currentUserId != targetUserId &&
+            followRepository.existsByFollowerIdAndFolloweeId(currentUserId, targetUserId)
+        val base = profile.toResponse()
+
+        return UserProfileResponse(
+            userId = base.userId,
+            nickname = base.nickname,
+            handle = base.handle,
+            bio = base.bio,
+            profileImageUrl = base.profileImageUrl,
+            coverImageUrl = base.coverImageUrl,
+            followerCount = base.followerCount,
+            followingCount = base.followingCount,
+            joinedChatRooms = base.joinedChatRooms,
+            isFollowing = isFollowing,
+        )
+    }
 
     @Transactional
     fun updateMyProfile(userId: Long, request: UpdateProfileRequest): MyProfileResponse {
