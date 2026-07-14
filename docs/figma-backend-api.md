@@ -47,7 +47,7 @@ Twix Figma 화면에서 필요한 백엔드 보강 API를 정리한다. 모든 �
 - `POST /api/uploads/files`: 채팅 첨부 업로드, multipart 필드명 `file`, 최대 20MB
 - 이미지 업로드는 회원가입 전 프로필/커버 이미지를 선택할 수 있도록 공개한다. 일반 파일 업로드는 JWT 인증이 필요하다.
 - 업로드 후 반환된 `/uploads/{uuid}.{extension}` 값을 프로필 또는 메시지 요청에 사용한다.
-- `GET`/`HEAD /uploads/**`는 이미지/첨부 표시와 사전 확인을 위해 인증 없이 접근할 수 있다.
+- `GET`/`HEAD /uploads/**`는 이미지/첨부 표시와 사전 확인을 위해 인증 없이 접근할 수 있으며 모든 Origin에 공개한다.
 
 ```json
 {
