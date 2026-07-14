@@ -14,6 +14,7 @@ import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -62,6 +63,37 @@ class ChatRoomController(
         )
 
         return ResponseEntity.ok(ApiResponse.success())
+    }
+
+    // 채팅방 나가기 (멤버 본인). "/members/me" 는 "/members/{userId}" 보다 우선 매칭됨.
+    @DeleteMapping("/{id}/members/me")
+    fun leaveRoom(
+        @PathVariable("id") id: Long,
+        @AuthenticationPrincipal userDetails: CustomUserDetails,
+    ): ResponseEntity<ApiResponse<Nothing>> {
+        chatRoomService.leaveRoom(roomId = id, userId = userDetails.id)
+        return ResponseEntity.noContent().build()
+    }
+
+    // 방장의 멤버 추방
+    @DeleteMapping("/{id}/members/{userId}")
+    fun kickMember(
+        @PathVariable("id") id: Long,
+        @PathVariable("userId") userId: Long,
+        @AuthenticationPrincipal userDetails: CustomUserDetails,
+    ): ResponseEntity<ApiResponse<Nothing>> {
+        chatRoomService.kickMember(roomId = id, hostUserId = userDetails.id, targetUserId = userId)
+        return ResponseEntity.noContent().build()
+    }
+
+    // 방장의 채팅방 삭제
+    @DeleteMapping("/{id}")
+    fun deleteRoom(
+        @PathVariable("id") id: Long,
+        @AuthenticationPrincipal userDetails: CustomUserDetails,
+    ): ResponseEntity<ApiResponse<Nothing>> {
+        chatRoomService.deleteRoom(roomId = id, hostUserId = userDetails.id)
+        return ResponseEntity.noContent().build()
     }
 
     @GetMapping("/{id}/messages")
