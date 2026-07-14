@@ -23,4 +23,19 @@ interface UserRepository : JpaRepository<User, Long> {
         @Param("userId") userId: Long,
         @Param("interests") interests: Collection<String>,
     ): List<User>
+
+    @Query(
+        """
+        select distinct u from User u
+        where u.id <> :currentUserId
+          and (:nickname is null or lower(u.nickname) like lower(concat('%', :nickname, '%')))
+          and (:hashtag is null or :hashtag member of u.interests)
+        order by u.id desc
+        """,
+    )
+    fun search(
+        @Param("currentUserId") currentUserId: Long,
+        @Param("nickname") nickname: String?,
+        @Param("hashtag") hashtag: String?,
+    ): List<User>
 }
