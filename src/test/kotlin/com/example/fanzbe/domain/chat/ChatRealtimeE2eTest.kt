@@ -7,6 +7,11 @@ import com.example.fanzbe.domain.chat.entity.ChatRoomMember
 import com.example.fanzbe.domain.chat.repository.ChatMessageRepository
 import com.example.fanzbe.domain.chat.repository.ChatRoomMemberRepository
 import com.example.fanzbe.domain.chat.repository.ChatRoomRepository
+import com.example.fanzbe.domain.dm.dto.DirectMessageResponse
+import com.example.fanzbe.domain.dm.repository.DirectChatRoomMemberRepository
+import com.example.fanzbe.domain.dm.repository.DirectChatRoomRepository
+import com.example.fanzbe.domain.dm.repository.DirectMessageRepository
+import com.example.fanzbe.domain.dm.service.DirectChatService
 import com.example.fanzbe.domain.user.entity.User
 import com.example.fanzbe.domain.user.repository.UserRepository
 import com.example.fanzbe.global.security.JwtProvider
@@ -41,6 +46,10 @@ class ChatRealtimeE2eTest(
     @Autowired private val chatRoomRepository: ChatRoomRepository,
     @Autowired private val chatRoomMemberRepository: ChatRoomMemberRepository,
     @Autowired private val chatMessageRepository: ChatMessageRepository,
+    @Autowired private val directChatService: DirectChatService,
+    @Autowired private val directChatRoomRepository: DirectChatRoomRepository,
+    @Autowired private val directChatRoomMemberRepository: DirectChatRoomMemberRepository,
+    @Autowired private val directMessageRepository: DirectMessageRepository,
     @Autowired private val environment: Environment,
 ) {
 
@@ -104,6 +113,61 @@ class ChatRealtimeE2eTest(
             chatMessageRepository.deleteAll()
             chatRoomMemberRepository.deleteAll()
             chatRoomRepository.deleteAll()
+            userRepository.deleteAll()
+        }
+    }
+
+    @Test
+    fun `JWT 로 연결해 보낸 DM이 상대 topic에 전달되고 저장된다`() {
+        val sender = userRepository.save(
+            User(username = "dm-realtime-sender", password = "encoded", nickname = "sender"),
+        )
+        val receiver = userRepository.save(
+            User(username = "dm-realtime-receiver", password = "encoded", nickname = "receiver"),
+        )
+        val room = directChatService.openRoom(sender.id!!, receiver.id!!)
+        val token = jwtProvider.createAccessToken(sender.id!!)
+        val stompClient = WebSocketStompClient(StandardWebSocketClient())
+        val connectHeaders = StompHeaders().apply { add("Authorization", "Bearer $token") }
+        val session = stompClient
+            .connectAsync(
+                "ws://localhost:${port()}/ws",
+                WebSocketHttpHeaders(),
+                connectHeaders,
+                object : StompSessionHandlerAdapter() {},
+            )
+            .get(5, TimeUnit.SECONDS)
+
+        try {
+            val received = ArrayBlockingQueue<ByteArray>(1)
+            session.subscribe(
+                "/topic/dm-rooms/${room.id}",
+                object : StompFrameHandler {
+                    override fun getPayloadType(headers: StompHeaders) = ByteArray::class.java
+                    override fun handleFrame(headers: StompHeaders, payload: Any?) {
+                        received.add(payload as ByteArray)
+                    }
+                },
+            )
+            Thread.sleep(500)
+
+            val sendHeaders = StompHeaders().apply {
+                destination = "/app/dm-rooms/${room.id}"
+                contentType = MimeType.valueOf("application/json")
+            }
+            session.send(sendHeaders, objectMapper.writeValueAsBytes(SendMessageRequest(content = "DM 실시간")))
+
+            val payload = assertNotNull(received.poll(5, TimeUnit.SECONDS), "DM 브로드캐스트 수신 실패")
+            val response = objectMapper.readValue(payload, DirectMessageResponse::class.java)
+            assertEquals("DM 실시간", response.content)
+            assertEquals(room.id, response.dmRoomId)
+            assertEquals(sender.id, response.senderId)
+            assertEquals("DM 실시간", directMessageRepository.findAll().single().content)
+        } finally {
+            session.disconnect()
+            directMessageRepository.deleteAll()
+            directChatRoomMemberRepository.deleteAll()
+            directChatRoomRepository.deleteAll()
             userRepository.deleteAll()
         }
     }

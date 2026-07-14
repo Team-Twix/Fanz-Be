@@ -11,8 +11,12 @@ data class CreateChatRoomRequest(
     @field:Size(max = 100)
     val name: String,
 
-    // 소갯말
-    @field:Size(max = 500)
+    // 목록 카드에 표시하는 한 줄 소개
+    @field:Size(max = 200)
+    val summary: String? = null,
+
+    // 채팅방 상세 설명
+    @field:Size(max = 2000)
     val description: String? = null,
 
     @field:Size(max = 2048)

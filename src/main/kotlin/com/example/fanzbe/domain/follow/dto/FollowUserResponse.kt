@@ -9,5 +9,9 @@ data class FollowUserResponse(
     val nickname: String,
     val handle: String?,
     val profileImageUrl: String?,
+    val interests: List<String>,
+    val mannerScore: Double,
+    val followerCount: Long,
+    val followingCount: Long,
     val isFollowing: Boolean,
 )

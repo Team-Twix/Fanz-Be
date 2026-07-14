@@ -38,6 +38,10 @@ open class User(
     @Column(length = 20)
     open var ageGroup: AgeGroup? = null,
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20, columnDefinition = "varchar(20) default 'UNSPECIFIED'")
+    open var gender: UserGender = UserGender.UNSPECIFIED,
+
     // 관심 카테고리 (회원가입 - 카테고리 단계)
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "user_interests", joinColumns = [JoinColumn(name = "user_id")])

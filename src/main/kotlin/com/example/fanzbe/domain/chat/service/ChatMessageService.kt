@@ -4,9 +4,11 @@ import com.example.fanzbe.domain.chat.dto.ChatMessageResponse
 import com.example.fanzbe.domain.chat.dto.MessagePageResponse
 import com.example.fanzbe.domain.chat.entity.ChatMessage
 import com.example.fanzbe.domain.chat.entity.ChatRoom
+import com.example.fanzbe.domain.chat.entity.MessageType
 import com.example.fanzbe.domain.chat.repository.ChatMessageRepository
 import com.example.fanzbe.domain.chat.repository.ChatRoomMemberRepository
 import com.example.fanzbe.domain.chat.repository.ChatRoomRepository
+import com.example.fanzbe.domain.profile.repository.ProfileRepository
 import com.example.fanzbe.domain.user.entity.User
 import com.example.fanzbe.domain.user.repository.UserRepository
 import com.example.fanzbe.global.exception.BusinessException
@@ -22,40 +24,58 @@ class ChatMessageService(
     private val chatRoomRepository: ChatRoomRepository,
     private val chatRoomMemberRepository: ChatRoomMemberRepository,
     private val userRepository: UserRepository,
+    private val profileRepository: ProfileRepository,
 ) {
 
     @Transactional
-    fun sendMessage(roomId: Long, senderUserId: Long, content: String): ChatMessageResponse {
+    fun sendMessage(
+        roomId: Long,
+        senderUserId: Long,
+        content: String?,
+        messageType: MessageType = MessageType.TEXT,
+        attachmentUrl: String? = null,
+    ): ChatMessageResponse {
         val chatRoom = getChatRoom(roomId)
         val sender = getUser(senderUserId)
 
-        if (!chatRoomMemberRepository.existsByChatRoomAndUser(chatRoom, sender)) {
-            throw BusinessException(ErrorCode.NOT_ROOM_MEMBER)
-        }
+        val membership = chatRoomMemberRepository.findByChatRoomAndUser(chatRoom, sender)
+            ?: throw BusinessException(ErrorCode.NOT_ROOM_MEMBER)
+        val normalizedContent = content?.trim().orEmpty()
+        val normalizedAttachmentUrl = attachmentUrl?.trim()?.takeIf { it.isNotEmpty() }
+        validateMessage(normalizedContent, messageType, normalizedAttachmentUrl)
 
         val chatMessage = chatMessageRepository.save(
             ChatMessage(
                 chatRoom = chatRoom,
                 sender = sender,
-                content = content.trim(),
+                content = normalizedContent,
+                messageType = messageType,
+                attachmentUrl = normalizedAttachmentUrl,
             ),
         )
+        membership.lastReadMessageId = requireNotNull(chatMessage.id)
 
         return chatMessage.toResponse()
     }
 
     /** 채팅방 메시지 이력 조회 (최신순). 방 멤버만 열람 가능. */
-    @Transactional(readOnly = true)
+    @Transactional
     fun getMessages(roomId: Long, userId: Long, page: Int, size: Int): MessagePageResponse {
         val chatRoom = getChatRoom(roomId)
         val user = getUser(userId)
-        if (!chatRoomMemberRepository.existsByChatRoomAndUser(chatRoom, user)) {
-            throw BusinessException(ErrorCode.NOT_ROOM_MEMBER)
-        }
+        val membership = chatRoomMemberRepository.findByChatRoomAndUser(chatRoom, user)
+            ?: throw BusinessException(ErrorCode.NOT_ROOM_MEMBER)
 
-        val pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"))
+        val pageable = PageRequest.of(
+            page.coerceAtLeast(0),
+            size.coerceIn(1, MAX_PAGE_SIZE),
+            Sort.by(Sort.Direction.DESC, "id"),
+        )
         val messages = chatMessageRepository.findByChatRoomId(roomId, pageable)
             .map { it.toResponse() }
+        chatMessageRepository.findTopByChatRoomIdOrderByIdDesc(roomId)?.id?.let {
+            membership.lastReadMessageId = it
+        }
 
         return MessagePageResponse.of(messages)
     }
@@ -65,9 +85,23 @@ class ChatMessageService(
             id = requireNotNull(id) { "Chat message id must not be null." },
             roomId = requireNotNull(chatRoom.id) { "Chat room id must not be null." },
             senderId = requireNotNull(sender.id) { "Sender id must not be null." },
+            senderNickname = sender.nickname,
+            senderProfileImageUrl = profileRepository.findByUserId(requireNotNull(sender.id))?.profileImageUrl,
             content = content,
+            messageType = messageType,
+            attachmentUrl = attachmentUrl,
             createdAt = requireNotNull(createdAt) { "Chat message createdAt must not be null." },
         )
+
+    private fun validateMessage(content: String, messageType: MessageType, attachmentUrl: String?) {
+        val valid = when (messageType) {
+            MessageType.TEXT -> content.isNotEmpty()
+            MessageType.IMAGE, MessageType.FILE -> attachmentUrl != null
+        }
+        if (!valid) {
+            throw BusinessException(ErrorCode.INVALID_CHAT_MESSAGE)
+        }
+    }
 
     private fun getChatRoom(roomId: Long): ChatRoom =
         chatRoomRepository.findById(roomId)
@@ -76,4 +110,8 @@ class ChatMessageService(
     private fun getUser(userId: Long): User =
         userRepository.findById(userId)
             .orElseThrow { BusinessException(ErrorCode.USER_NOT_FOUND) }
+
+    companion object {
+        private const val MAX_PAGE_SIZE = 100
+    }
 }

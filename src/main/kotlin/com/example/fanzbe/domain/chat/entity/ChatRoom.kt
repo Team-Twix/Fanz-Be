@@ -27,8 +27,12 @@ open class ChatRoom(
     @Column(nullable = false, length = 100)
     open var name: String,
 
-    // 소갯말
-    @Column(length = 500)
+    // 목록 카드에 표시하는 한 줄 소개
+    @Column(length = 200)
+    open var summary: String? = null,
+
+    // 채팅방 상세 설명
+    @Column(length = 2000)
     open var description: String? = null,
 
     @Column(name = "image_url", length = 2048)
@@ -55,7 +59,7 @@ open class ChatRoom(
     // 가입조건 - 추가 조건 (자유 태그)
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "chat_room_extra_conditions", joinColumns = [JoinColumn(name = "chat_room_id")])
-    @Column(name = "condition", length = 100)
+    @Column(name = "condition_value", length = 100)
     open var extraConditions: MutableSet<String> = mutableSetOf(),
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

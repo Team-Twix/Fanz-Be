@@ -101,5 +101,12 @@ class ChatMemberManagementTest(
         chatRoomMemberRepository.findByUserId(userId).any { it.chatRoom.id == roomId }
 
     private fun createUser(username: String): User =
-        userRepository.save(User(username = username, password = "encoded", nickname = username))
+        userRepository.save(
+            User(
+                username = username,
+                password = "encoded",
+                nickname = username,
+                interests = mutableSetOf("anime"),
+            ),
+        )
 }

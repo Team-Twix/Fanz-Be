@@ -2,10 +2,13 @@ package com.example.fanzbe.domain.chat.controller
 
 import com.example.fanzbe.domain.chat.dto.ChatMessageResponse
 import com.example.fanzbe.domain.chat.dto.ChatRoomResponse
+import com.example.fanzbe.domain.chat.dto.ChatRoomMemberResponse
 import com.example.fanzbe.domain.chat.dto.CreateChatRoomRequest
 import com.example.fanzbe.domain.chat.dto.MessagePageResponse
+import com.example.fanzbe.domain.chat.dto.MyChatRoomResponse
 import com.example.fanzbe.domain.chat.dto.PopularChatRoomResponse
 import com.example.fanzbe.domain.chat.dto.SendMessageRequest
+import com.example.fanzbe.domain.chat.dto.RecommendedChatRoomGroupResponse
 import com.example.fanzbe.domain.chat.service.ChatMessageService
 import com.example.fanzbe.domain.chat.service.ChatRoomService
 import com.example.fanzbe.global.common.ApiResponse
@@ -51,6 +54,31 @@ class ChatRoomController(
         @RequestParam(name = "limit", defaultValue = "4") limit: Int,
     ): ApiResponse<List<PopularChatRoomResponse>> =
         ApiResponse.success(chatRoomService.getPopularRooms(limit))
+
+    @GetMapping("/recommended")
+    fun getRecommendedRooms(
+        @AuthenticationPrincipal userDetails: CustomUserDetails,
+    ): ApiResponse<List<RecommendedChatRoomGroupResponse>> =
+        ApiResponse.success(chatRoomService.getRecommendedRooms(userDetails.id))
+
+    @GetMapping("/me")
+    fun getMyRooms(
+        @AuthenticationPrincipal userDetails: CustomUserDetails,
+    ): ApiResponse<List<MyChatRoomResponse>> =
+        ApiResponse.success(chatRoomService.getMyRooms(userDetails.id))
+
+    @GetMapping("/{id}")
+    fun getRoom(
+        @PathVariable("id") id: Long,
+    ): ApiResponse<ChatRoomResponse> =
+        ApiResponse.success(chatRoomService.getRoom(id))
+
+    @GetMapping("/{id}/members")
+    fun getMembers(
+        @PathVariable("id") id: Long,
+        @AuthenticationPrincipal userDetails: CustomUserDetails,
+    ): ApiResponse<List<ChatRoomMemberResponse>> =
+        ApiResponse.success(chatRoomService.getMembers(id, userDetails.id))
 
     @PostMapping("/{id}/join")
     fun joinRoom(
@@ -126,6 +154,8 @@ class ChatRoomController(
                         roomId = id,
                         senderUserId = userDetails.id,
                         content = request.content,
+                        messageType = request.messageType,
+                        attachmentUrl = request.attachmentUrl,
                     ),
                 ),
             )

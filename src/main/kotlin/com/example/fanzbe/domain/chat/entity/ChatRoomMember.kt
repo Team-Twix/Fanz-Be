@@ -40,4 +40,7 @@ open class ChatRoomMember(
 
     @Column(nullable = false)
     open var joinedAt: LocalDateTime = LocalDateTime.now(),
+
+    @Column(name = "last_read_message_id")
+    open var lastReadMessageId: Long? = null,
 ) : BaseTimeEntity()

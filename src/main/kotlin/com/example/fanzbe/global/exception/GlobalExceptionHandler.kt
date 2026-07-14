@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
+import org.springframework.web.multipart.MaxUploadSizeExceededException
 
 @RestControllerAdvice
 class GlobalExceptionHandler {
@@ -37,6 +38,16 @@ class GlobalExceptionHandler {
                     fieldErrors,
                 ),
             )
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException::class)
+    fun handleMaxUploadSizeExceededException(
+        exception: MaxUploadSizeExceededException,
+    ): ResponseEntity<ApiResponse<Nothing>> {
+        log.warn("Rejected oversized multipart upload", exception)
+        return ResponseEntity
+            .status(ErrorCode.UPLOAD_TOO_LARGE.status)
+            .body(ApiResponse.failure(ErrorCode.UPLOAD_TOO_LARGE.code, ErrorCode.UPLOAD_TOO_LARGE.message))
     }
 
     @ExceptionHandler(Exception::class)

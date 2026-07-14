@@ -12,6 +12,12 @@ interface ChatRoomMemberRepository : JpaRepository<ChatRoomMember, Long> {
 
     fun findByChatRoomAndUser(chatRoom: ChatRoom, user: User): ChatRoomMember?
 
+    fun existsByChatRoomIdAndUserId(chatRoomId: Long, userId: Long): Boolean
+
+    fun findByChatRoomIdAndUserId(chatRoomId: Long, userId: Long): ChatRoomMember?
+
+    fun findByChatRoomIdOrderByJoinedAtAsc(chatRoomId: Long): List<ChatRoomMember>
+
     // 유저가 참여중인 채팅방 멤버십 목록 (마이프로필의 "참여중인 단체 채팅")
     fun findByUserId(userId: Long): List<ChatRoomMember>
 

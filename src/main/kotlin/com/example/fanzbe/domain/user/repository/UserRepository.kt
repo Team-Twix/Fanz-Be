@@ -16,7 +16,7 @@ interface UserRepository : JpaRepository<User, Long> {
         from User u
         join u.interests i
         where u.id <> :userId
-          and i in :interests
+          and lower(i) in :interests
         """,
     )
     fun findCandidatesByInterests(
@@ -27,9 +27,10 @@ interface UserRepository : JpaRepository<User, Long> {
     @Query(
         """
         select distinct u from User u
+        left join u.interests i
         where u.id <> :currentUserId
           and (:nickname is null or lower(u.nickname) like lower(concat('%', :nickname, '%')))
-          and (:hashtag is null or :hashtag member of u.interests)
+          and (:hashtag is null or lower(i) = :hashtag)
         order by u.id desc
         """,
     )
