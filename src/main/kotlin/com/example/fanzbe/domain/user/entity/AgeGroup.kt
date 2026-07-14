@@ -11,4 +11,18 @@ enum class AgeGroup {
     FORTIES,   // 40대
     FIFTIES,   // 50대
     SIXTIES,   // 60대
+    ;
+
+    companion object {
+        /** 실제 나이(숫자)를 나이대 그룹으로 변환. 60세 이상은 SIXTIES 로 캡. */
+        fun fromAge(age: Int): AgeGroup = when {
+            age in 10..19 -> TEENS
+            age in 20..29 -> TWENTIES
+            age in 30..39 -> THIRTIES
+            age in 40..49 -> FORTIES
+            age in 50..59 -> FIFTIES
+            age >= 60 -> SIXTIES
+            else -> throw IllegalArgumentException("지원하지 않는 나이입니다: $age")
+        }
+    }
 }

@@ -1,8 +1,6 @@
 package com.example.fanzbe.domain.auth.dto
 
-import com.example.fanzbe.domain.user.entity.AgeGroup
 import jakarta.validation.constraints.NotBlank
-import jakarta.validation.constraints.NotNull
 import jakarta.validation.constraints.Size
 
 /**
@@ -26,8 +24,9 @@ data class SignupRequest(
     @field:Size(max = 50)
     val nickname: String,
 
-    @field:NotNull
-    val ageGroup: AgeGroup,
+    // 실제 나이 (숫자 또는 문자열). 서버에서 AgeGroup 으로 변환.
+    @field:NotBlank
+    val age: String,
 
     // 관심 카테고리
     val interests: List<String> = emptyList(),

@@ -7,6 +7,7 @@ import com.example.fanzbe.domain.auth.dto.SignupResponse
 import com.example.fanzbe.domain.auth.dto.TokenResponse
 import com.example.fanzbe.domain.auth.entity.RefreshToken
 import com.example.fanzbe.domain.auth.repository.RefreshTokenRepository
+import com.example.fanzbe.domain.user.entity.AgeGroup
 import com.example.fanzbe.domain.user.entity.User
 import com.example.fanzbe.domain.user.repository.UserRepository
 import com.example.fanzbe.global.exception.BusinessException
@@ -37,6 +38,7 @@ class AuthService(
             throw BusinessException(ErrorCode.USERNAME_DUPLICATED)
         }
 
+        val ageGroup = resolveAgeGroup(request.age)
         val encodedPassword = requireNotNull(passwordEncoder.encode(request.password)) {
             "Encoded password must not be null."
         }
@@ -45,7 +47,7 @@ class AuthService(
                 username = request.username,
                 password = encodedPassword,
                 nickname = request.nickname,
-                ageGroup = request.ageGroup,
+                ageGroup = ageGroup,
                 interests = request.interests
                     .mapNotNull { it.trim().takeIf(String::isNotEmpty) }
                     .toMutableSet(),
@@ -84,6 +86,17 @@ class AuthService(
     @Transactional
     fun logout(userId: Long) {
         refreshTokenRepository.deleteByUserId(userId)
+    }
+
+    /** 나이(숫자/문자열)를 나이대 그룹으로 변환. 파싱 실패·범위 밖이면 INVALID_INPUT. */
+    private fun resolveAgeGroup(age: String): AgeGroup {
+        val ageValue = age.trim().toIntOrNull()
+            ?: throw BusinessException(ErrorCode.INVALID_INPUT)
+        return try {
+            AgeGroup.fromAge(ageValue)
+        } catch (e: IllegalArgumentException) {
+            throw BusinessException(ErrorCode.INVALID_INPUT)
+        }
     }
 
     /** access/refresh 발급 + refresh 저장(유저당 1개, 회전). */
