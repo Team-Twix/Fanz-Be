@@ -20,4 +20,15 @@ interface ChatRoomRepository : JpaRepository<ChatRoom, Long> {
         @Param("hashtag") hashtag: String?,
         @Param("keyword") keyword: String?,
     ): List<ChatRoom>
+
+    @Query(
+        """
+        select distinct cr
+        from ChatRoom cr
+        join cr.hashtags h
+        where lower(h) in :interests
+        order by cr.createdAt desc, cr.id desc
+        """,
+    )
+    fun findByInterests(@Param("interests") interests: Collection<String>): List<ChatRoom>
 }

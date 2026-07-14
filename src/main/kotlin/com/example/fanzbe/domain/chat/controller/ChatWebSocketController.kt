@@ -29,6 +29,8 @@ class ChatWebSocketController(
             roomId = roomId,
             senderUserId = userId,
             content = message.content,
+            messageType = message.messageType,
+            attachmentUrl = message.attachmentUrl,
         )
 
         messagingTemplate.convertAndSend("/topic/chat-rooms/$roomId", response)

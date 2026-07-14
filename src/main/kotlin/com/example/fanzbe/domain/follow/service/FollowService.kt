@@ -60,6 +60,10 @@ class FollowService(
             nickname = nickname,
             handle = profile?.handle,
             profileImageUrl = profile?.profileImageUrl,
+            interests = interests.sorted(),
+            mannerScore = mannerScore,
+            followerCount = followRepository.countByFolloweeId(targetId),
+            followingCount = followRepository.countByFollowerId(targetId),
             isFollowing = isFollowing,
         )
     }

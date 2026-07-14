@@ -17,6 +17,10 @@ interface ChatMessageRepository : JpaRepository<ChatMessage, Long> {
     // 메시지 이력 조회 (페이지네이션). 정렬은 Pageable 로 전달.
     fun findByChatRoomId(chatRoomId: Long, pageable: Pageable): Page<ChatMessage>
 
+    fun findTopByChatRoomIdOrderByIdDesc(chatRoomId: Long): ChatMessage?
+
+    fun countByChatRoomIdAndIdGreaterThan(chatRoomId: Long, id: Long): Long
+
     // 채팅방 삭제 시 메시지 일괄 삭제
     fun deleteByChatRoomId(chatRoomId: Long)
 

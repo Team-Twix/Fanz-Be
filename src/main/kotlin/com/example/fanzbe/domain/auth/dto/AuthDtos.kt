@@ -6,6 +6,11 @@ data class SignupResponse(
     val userId: Long,
 )
 
+data class UsernameAvailabilityResponse(
+    val username: String,
+    val available: Boolean,
+)
+
 data class LoginRequest(
     @field:NotBlank
     val username: String,

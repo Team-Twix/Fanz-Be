@@ -29,7 +29,7 @@ class RecommendationService(
 
         val current = userRepository.findById(currentUserId)
             .orElseThrow { BusinessException(ErrorCode.USER_NOT_FOUND) }
-        val currentInterests = current.interests.toSet()
+        val currentInterests = current.interests.map(::normalizeTag).toSet()
         if (currentInterests.isEmpty()) {
             return emptyList()
         }
@@ -85,13 +85,16 @@ class RecommendationService(
         RankInput(
             userId = requireNotNull(id) { "Rank input user id must not be null." },
             nickname = nickname,
-            interests = interests.toSet(),
+            interests = interests.map(::normalizeTag).toSet(),
             ageGroup = ageGroup,
             mannerScore = mannerScore,
         )
 
     private fun sharedHashtags(currentInterests: Set<String>, candidate: User): List<String> =
-        currentInterests.intersect(candidate.interests.toSet()).sorted()
+        currentInterests.intersect(candidate.interests.map(::normalizeTag).toSet()).sorted()
+
+    private fun normalizeTag(tag: String): String =
+        tag.trim().removePrefix("#").lowercase()
 
     private data class CandidateScore(
         val user: User,

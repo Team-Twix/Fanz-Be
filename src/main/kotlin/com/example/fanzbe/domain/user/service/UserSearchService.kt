@@ -18,7 +18,7 @@ class UserSearchService(
     @Transactional(readOnly = true)
     fun search(currentUserId: Long, nickname: String?, hashtag: String?): List<UserSearchResponse> {
         val normalizedNickname = nickname.normalizeSearchParam()
-        val normalizedHashtag = hashtag.normalizeSearchParam()
+        val normalizedHashtag = hashtag.normalizeHashtag()
 
         return userRepository.search(
             currentUserId = currentUserId,
@@ -38,6 +38,7 @@ class UserSearchService(
             nickname = nickname,
             handle = profile?.handle,
             profileImageUrl = profile?.profileImageUrl,
+            interests = interests.sorted(),
             mannerScore = mannerScore,
             isFollowing = isFollowing,
         )
@@ -45,4 +46,7 @@ class UserSearchService(
 
     private fun String?.normalizeSearchParam(): String? =
         this?.trim()?.takeIf { it.isNotEmpty() }
+
+    private fun String?.normalizeHashtag(): String? =
+        this?.trim()?.removePrefix("#")?.lowercase()?.takeIf { it.isNotEmpty() }
 }
