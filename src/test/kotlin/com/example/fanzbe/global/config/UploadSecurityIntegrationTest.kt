@@ -9,6 +9,7 @@ import java.nio.file.Files
 import java.util.Base64
 import java.util.UUID
 import kotlin.test.Test
+import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import org.springframework.beans.factory.annotation.Autowired
@@ -35,8 +36,37 @@ class UploadSecurityIntegrationTest(
         assertTrue(storedUrl.matches(Regex("/uploads/[0-9a-f-]+\\.png")))
 
         val storedFile = fileStorageService.uploadRoot().resolve(storedUrl.substringAfterLast('/'))
-        assertTrue(Files.exists(storedFile))
-        Files.deleteIfExists(storedFile)
+        try {
+            assertTrue(Files.exists(storedFile))
+        } finally {
+            Files.deleteIfExists(storedFile)
+        }
+    }
+
+    @Test
+    fun `uploaded image supports public get and head requests`() {
+        val uploadResponse = upload("/api/uploads/images", "profile.png", "image/png", ONE_PIXEL_PNG)
+        assertEquals(201, uploadResponse.statusCode())
+
+        val storedUrl = objectMapper.readTree(uploadResponse.body()).path("data").path("url").stringValue()
+        val storedFile = fileStorageService.uploadRoot().resolve(storedUrl.substringAfterLast('/'))
+
+        try {
+            val getResponse = publicImageRequest(storedUrl, "GET")
+            assertEquals(200, getResponse.statusCode())
+            assertEquals("image/png", getResponse.headers().firstValue("Content-Type").orElse(null))
+            assertEquals(FRONTEND_ORIGIN, getResponse.headers().firstValue("Access-Control-Allow-Origin").orElse(null))
+            assertContentEquals(ONE_PIXEL_PNG, getResponse.body())
+
+            val headResponse = publicImageRequest(storedUrl, "HEAD")
+            assertEquals(200, headResponse.statusCode())
+            assertEquals("image/png", headResponse.headers().firstValue("Content-Type").orElse(null))
+            assertEquals(FRONTEND_ORIGIN, headResponse.headers().firstValue("Access-Control-Allow-Origin").orElse(null))
+            assertEquals(ONE_PIXEL_PNG.size.toString(), headResponse.headers().firstValue("Content-Length").orElse(null))
+            assertTrue(headResponse.body().isEmpty())
+        } finally {
+            Files.deleteIfExists(storedFile)
+        }
     }
 
     @Test
@@ -68,11 +98,21 @@ class UploadSecurityIntegrationTest(
         return httpClient.send(request, HttpResponse.BodyHandlers.ofString())
     }
 
+    private fun publicImageRequest(path: String, method: String): HttpResponse<ByteArray> {
+        val request = HttpRequest.newBuilder(URI.create("http://127.0.0.1:${port()}$path"))
+            .header("Origin", FRONTEND_ORIGIN)
+            .method(method, HttpRequest.BodyPublishers.noBody())
+            .build()
+
+        return httpClient.send(request, HttpResponse.BodyHandlers.ofByteArray())
+    }
+
     private fun port(): Int =
         environment.getProperty("local.server.port")?.toInt()
             ?: error("local.server.port is unavailable")
 
     companion object {
+        private const val FRONTEND_ORIGIN = "http://localhost:5173"
         private val ONE_PIXEL_PNG = Base64.getDecoder().decode(
             "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
         )
